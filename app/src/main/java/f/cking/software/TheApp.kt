@@ -10,17 +10,22 @@ import org.koin.android.ext.android.getKoin
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import timber.log.Timber
 
 class TheApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
         applyDynamicColors()
         initDi()
         initTimber()
         saveFirstLaunchTime()
+    }
+
+    fun restartKoin() {
+        stopKoin()
+        initDi()
     }
 
     private fun applyDynamicColors() {
@@ -38,6 +43,7 @@ class TheApp : Application() {
                 DataModule(SHARED_PREF_NAME, DATABASE_NAME).module,
                 InteractorsModule.module,
                 UiModule.module,
+                module { single { this@TheApp } }
             )
         }
     }
@@ -48,14 +54,7 @@ class TheApp : Application() {
         }
     }
 
-    fun restartKoin() {
-        stopKoin()
-        initDi()
-    }
-
     companion object {
-        lateinit var instance: TheApp
-
         const val SHARED_PREF_NAME = "app-prefs"
         const val DATABASE_NAME = "app-database"
     }
