@@ -197,15 +197,14 @@ object Shaders {
             float2 refractedG = refract(incident, normal, iorG).xy;
             float2 refractedB = refract(incident, normal, iorB).xy;
             
-            float a = content.eval((uv + refractedR) * iResolution).a;
             float r = content.eval((uv + refractedR) * iResolution).r;
             float g = content.eval((uv + refractedG) * iResolution).g;
             float b = content.eval((uv + refractedB) * iResolution).b;
+            float a = content.eval((uv + refractedG) * iResolution).a;
             
             return float4(r, g, b, a);
         }
     """
-
 
     @Language("AGSL")
     val WATER_DROP = """
