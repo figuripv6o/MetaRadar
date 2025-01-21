@@ -179,15 +179,14 @@ object Shaders {
         
             float2 uv = fragCoord / iResolution; // Normalize screen coordinates
             
-            float A = 0.1;
+            float A = 0.05;
             float k = 0.3;
         
             float2 eyeVector = (uv * 2.0) - 1.0;
-            float depth = curve(fragCoord, A, k) * 0.02;
+            float depth = curve(fragCoord, A, k) * 0.04;
             float3 incident = float3(eyeVector.x * 0.01, depth, 1.0);
             float3 normal = computeNormal(fragCoord, A, k);
-            //float3 normal = float3(0.0, 0.0, -1.0);
-            float ior = 1.0/1.5;
+            float ior = 1.0/$ARG_REFRACTION_INDEX;
             
             float3 refracted = refract(incident, normal, ior);
         
