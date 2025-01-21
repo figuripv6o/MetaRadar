@@ -1,5 +1,6 @@
 package f.cking.software.utils.graphic
 
+import android.annotation.SuppressLint
 import android.graphics.BlendMode
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import f.cking.software.dpToPx
+import f.cking.software.letIf
 import kotlin.math.max
 
 @Composable
@@ -72,6 +74,7 @@ fun GlassSystemNavbar(
     }
 }
 
+@SuppressLint("NewApi")
 @Composable
 fun GlassBottomSpace(
     modifier: Modifier = Modifier,
@@ -91,10 +94,9 @@ fun GlassBottomSpace(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .let {
-                    if (isRenderEffectSupported && navbarHeightPx.value != null) {
-                        it.blurBottom(heightPx = navbarHeightPx.value!!, blur = blur, glassCurveSizeDp = glassCurveSizeDp)
-                    } else it
+                .letIf(isRenderEffectSupported && navbarHeightPx.value != null) {
+                    //it.blurBottom(heightPx = navbarHeightPx.value!!, blur = blur, glassCurveSizeDp = glassCurveSizeDp)
+                    it.glassBottom(heightPx = navbarHeightPx.value!!)
                 }
         ) {
             globalContent()
@@ -134,16 +136,57 @@ fun GlassBottomSpace(
     }
 }
 
+@Composable
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+fun Modifier.glassBottom(
+    heightPx: Float,
+    blur: Float = 0f,
+    refractionIndex: Float = 1.44f, // glass refraction
+    elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
+): Modifier = composed {
+
+    val contentShader = remember { RuntimeShader(Shaders.SHADER_CONTENT) }
+    val effectAreaShader = remember { RuntimeShader(Shaders.SHADER_EFFECT_AREA) }
+    val glassShader = remember { RuntimeShader(Shaders.GLASS_SHADER_ADVANCED) }
+
+    contentShader.setFloatUniform("blurredHeight", heightPx)
+    effectAreaShader.setFloatUniform("blurredHeight", heightPx)
+    glassShader.setFloatUniform(Shaders.ARG_ELEVATION, elevationPx)
+    glassShader.setFloatUniform(Shaders.ARG_REFRACTION_INDEX, refractionIndex)
+
+    this
+        .onSizeChanged {
+            contentShader.setFloatUniform(Shaders.ARG_RESOLUTION, it.width.toFloat(), it.height.toFloat())
+            effectAreaShader.setFloatUniform(Shaders.ARG_RESOLUTION, it.width.toFloat(), it.height.toFloat())
+            glassShader.setFloatUniform(Shaders.ARG_RESOLUTION, it.width.toFloat(), it.height.toFloat())
+        }
+        .graphicsLayer {
+            renderEffect = RenderEffect
+                .createBlendModeEffect(
+                    RenderEffect.createRuntimeShaderEffect(contentShader, Shaders.ARG_CONTENT),
+                    RenderEffect.createChainEffect(
+                        RenderEffect.createRuntimeShaderEffect(effectAreaShader, Shaders.ARG_CONTENT),
+                        RenderEffect.createChainEffect(
+                            RenderEffect.createRuntimeShaderEffect(glassShader, Shaders.ARG_CONTENT),
+                            RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.MIRROR),
+                        )
+                    ),
+                    BlendMode.SRC_OVER,
+                )
+                .asComposeRenderEffect()
+        }
+}
+
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 fun Modifier.blurBottom(heightPx: Float, blur: Float, glassCurveSizeDp: Float): Modifier = composed {
     val context = LocalContext.current
 
     val contentShader = remember { RuntimeShader(Shaders.SHADER_CONTENT) }
-    val blurredShader = remember { RuntimeShader(Shaders.SHADER_BLURRED) }
+    val effectAreaShader = remember { RuntimeShader(Shaders.SHADER_EFFECT_AREA) }
     val glassShader = remember { RuntimeShader(Shaders.GLASS_SHADER) }
 
     contentShader.setFloatUniform("blurredHeight", heightPx)
-    blurredShader.setFloatUniform("blurredHeight", heightPx)
+    effectAreaShader.setFloatUniform("blurredHeight", heightPx)
     glassShader.setFloatUniform("blurredHeight", heightPx)
 
     this
@@ -153,7 +196,7 @@ fun Modifier.blurBottom(heightPx: Float, blur: Float, glassCurveSizeDp: Float): 
                 it.width.toFloat(),
                 it.height.toFloat(),
             )
-            blurredShader.setFloatUniform(
+            effectAreaShader.setFloatUniform(
                 "iResolution",
                 it.width.toFloat(),
                 it.height.toFloat(),
@@ -168,21 +211,19 @@ fun Modifier.blurBottom(heightPx: Float, blur: Float, glassCurveSizeDp: Float): 
             val glassCurveSizePx = max(minCurveSizePx, context.dpToPx(glassCurveSizeDp).toFloat())
             glassShader.setFloatUniform("horizontalSquareSize", glassCurveSizePx)
         }
-        .then(
-            graphicsLayer {
-                renderEffect = RenderEffect
-                    .createBlendModeEffect(
-                        RenderEffect.createRuntimeShaderEffect(contentShader, "content"),
+        .graphicsLayer {
+            renderEffect = RenderEffect
+                .createBlendModeEffect(
+                    RenderEffect.createRuntimeShaderEffect(contentShader, Shaders.ARG_CONTENT),
+                    RenderEffect.createChainEffect(
+                        RenderEffect.createRuntimeShaderEffect(effectAreaShader, Shaders.ARG_CONTENT),
                         RenderEffect.createChainEffect(
-                            RenderEffect.createRuntimeShaderEffect(blurredShader, "content"),
-                            RenderEffect.createChainEffect(
-                                RenderEffect.createRuntimeShaderEffect(glassShader, "content"),
-                                RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.MIRROR),
-                            )
-                        ),
-                        BlendMode.SRC_OVER,
-                    )
-                    .asComposeRenderEffect()
-            }
-        )
+                            RenderEffect.createRuntimeShaderEffect(glassShader, Shaders.ARG_CONTENT),
+                            RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.MIRROR),
+                        )
+                    ),
+                    BlendMode.SRC_OVER,
+                )
+                .asComposeRenderEffect()
+        }
 }

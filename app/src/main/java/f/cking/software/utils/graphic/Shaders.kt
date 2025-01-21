@@ -3,9 +3,11 @@ package f.cking.software.utils.graphic
 import org.intellij.lang.annotations.Language
 
 object Shaders {
+    const val ARG_CONTENT = "content"
+
     @Language("AGSL")
     val SHADER_CONTENT = """
-        uniform shader content;
+        uniform shader $ARG_CONTENT;
     
         uniform float blurredHeight;
         uniform float2 iResolution;
@@ -20,8 +22,8 @@ object Shaders {
 """
 
     @Language("AGSL")
-    val SHADER_BLURRED = """
-        uniform shader content;
+    val SHADER_EFFECT_AREA = """
+        uniform shader $ARG_CONTENT;
     
         uniform float blurredHeight;
         uniform float2 iResolution;
@@ -37,7 +39,7 @@ object Shaders {
 
     @Language("AGSL")
     val GLASS_SHADER = """
-        uniform shader content;
+        uniform shader $ARG_CONTENT;
         uniform float blurredHeight;
         uniform float2 iResolution;
         
@@ -137,10 +139,52 @@ object Shaders {
         }
     """
 
+    const val ARG_ELEVATION = "elevation"
+    const val ARG_REFRACTION_INDEX = "refractionIndex"
+    const val ARG_RESOLUTION = "iResolution"
+
+    @Language("AGSL")
+    val GLASS_SHADER_ADVANCED = """
+        uniform shader $ARG_CONTENT;
+        uniform float $ARG_ELEVATION;
+        uniform float $ARG_REFRACTION_INDEX;
+        uniform float2 $ARG_RESOLUTION;
+
+        float3 computeNormal(float2 fCoord, float A, float k) {
+            // Partial derivatives
+            float dfdx = A * k * cos(k * fCoord.x);
+            float dfdy = 0.0;
+        
+            // Tangent vectors
+            float3 tangentX = float3(1.0, 0.0, dfdx);
+            float3 tangentY = float3(0.0, 1.0, dfdy);
+        
+            // Normal vector
+            float3 normal = normalize(cross(tangentX, tangentY));
+        
+            return normal;
+        }
+
+        
+        float4 main(float2 fragCoord) {
+        
+            float2 uv = fragCoord.xy / iResolution.xy; // Normalize screen coordinates
+        
+            float3 incident = float3(0.1, 0.0, 1.0);
+            float3 normal = computeNormal(fragCoord.xy, 0.1, 0.3);
+            float ior = 1.0/1.5;
+            
+            // find refraction targed based on angle and refraction factor
+            float3 refracted = refract(incident, normal, ior);
+        
+        	return content.eval((uv + refracted.xy) * iResolution.xy);
+        }
+    """
+
 
     @Language("AGSL")
     val WATER_DROP = """
-        uniform shader content;
+        uniform shader $ARG_CONTENT;
         uniform float factor;
         uniform float2 iResolution;
         uniform float2 dropPosition;

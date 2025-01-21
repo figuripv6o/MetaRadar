@@ -18,6 +18,9 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.regex.PatternSyntaxException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 
 fun Long.getTimePeriodStr(context: Context): String {
@@ -138,4 +141,20 @@ fun String.checkRegexSafe(pattern: String): Boolean {
          Timber.e("Unexpected regex failure", e)
         false
     }
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun <T> T.letIf(condition: () -> Boolean, block: (T) -> T): T {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    return if (condition.invoke()) block(this) else this
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun <T> T.letIf(condition: Boolean, block: (T) -> T): T {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    return if (condition) block(this) else this
 }
