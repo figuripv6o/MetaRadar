@@ -188,9 +188,21 @@ object Shaders {
             float3 normal = computeNormal(fragCoord, A, k);
             float ior = 1.0/$ARG_REFRACTION_INDEX;
             
-            float3 refracted = refract(incident, normal, ior);
-        
-        	return content.eval((uv + refracted.xy) * iResolution.xy);
+            float aberationIndex = 0.02;
+            float iorR = ior - aberationIndex;
+            float iorG = ior;
+            float iorB = ior + aberationIndex;
+            
+            float2 refractedR = refract(incident, normal, iorR).xy;
+            float2 refractedG = refract(incident, normal, iorG).xy;
+            float2 refractedB = refract(incident, normal, iorB).xy;
+            
+            float a = content.eval((uv + refractedR) * iResolution).a;
+            float r = content.eval((uv + refractedR) * iResolution).r;
+            float g = content.eval((uv + refractedG) * iResolution).g;
+            float b = content.eval((uv + refractedB) * iResolution).b;
+            
+            return float4(r, g, b, a);
         }
     """
 
