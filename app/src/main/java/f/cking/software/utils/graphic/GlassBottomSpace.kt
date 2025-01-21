@@ -141,6 +141,8 @@ fun GlassBottomSpace(
 fun Modifier.glassBottom(
     heightPx: Float,
     refractionIndex: Float = 1.44f, // glass refraction
+    aberrationIndex: Float = 0.1f,
+    curveType: Shaders.CurveType = Shaders.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
 ): Modifier = composed {
 
@@ -149,6 +151,10 @@ fun Modifier.glassBottom(
     glassShader.setFloatUniform(Shaders.ARG_ELEVATION, elevationPx)
     glassShader.setFloatUniform(Shaders.ARG_REFRACTION_INDEX, refractionIndex)
     glassShader.setFloatUniform(Shaders.ARG_PANEL_HEIGHT, heightPx)
+    glassShader.setIntUniform(Shaders.ARG_CURVE_TYPE, curveType.type)
+    glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_A, curveType.A)
+    glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_K, curveType.k)
+    glassShader.setFloatUniform(Shaders.ARG_ABERRATION_INDEX, aberrationIndex)
 
     this
         .onSizeChanged {

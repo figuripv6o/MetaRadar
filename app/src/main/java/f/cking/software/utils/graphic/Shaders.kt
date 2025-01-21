@@ -143,6 +143,15 @@ object Shaders {
     const val ARG_REFRACTION_INDEX = "refractionIndex"
     const val ARG_RESOLUTION = "iResolution"
     const val ARG_PANEL_HEIGHT = "panelHeigh"
+    const val ARG_CURVE_TYPE = "curveType"
+    const val ARG_CURVE_PARAM_A = "curveParamA"
+    const val ARG_CURVE_PARAM_K = "curveParamK"
+    const val ARG_ABERRATION_INDEX = "aberrationIndex"
+
+    sealed class CurveType(val type: Int, val A: Float, val k: Float) {
+        object Sin : CurveType(0, 0.03f, 0.3f)
+        object Mod : CurveType(1, 0.1f, 0.25f)
+    }
 
     @Language("AGSL")
     val GLASS_SHADER_ADVANCED = """
@@ -151,22 +160,48 @@ object Shaders {
         uniform float $ARG_REFRACTION_INDEX;
         uniform float2 $ARG_RESOLUTION;
         uniform float $ARG_PANEL_HEIGHT;
+        uniform int $ARG_CURVE_TYPE;
+        uniform float $ARG_CURVE_PARAM_A;
+        uniform float $ARG_CURVE_PARAM_K;
+        uniform float $ARG_ABERRATION_INDEX;
+        
+        float curveSin(float2 fCoord, float A, float k) {
+            return A * sin(k * fCoord.x);
+        }
+        
+        float curveMod(float2 fCoord, float A, float k) {
+            return -pow(mod(fCoord.x * k - 2.0, 4.0) - 2.0, 2.0) * A * k - A * k * 2;
+        }
         
         float curve(float2 fCoord, float A, float k) {
-            return A * k * cos(k * fCoord.x);
+            switch($ARG_CURVE_TYPE) {
+                case ${CurveType.Sin.type}:
+                    return curveSin(fCoord, A, k);
+                case ${CurveType.Mod.type}:
+                    return curveMod(fCoord, A, k);
+            }
+            
+            return 0.0;
         }
-
-        float3 computeNormal(float2 fCoord, float A, float k) {
+        
+        float height(float x, float y) {
+            return curve(float2(x, y), $ARG_CURVE_PARAM_A, $ARG_CURVE_PARAM_K);
+        }
+        
+        float3 calculateNormal(float2 fCoord) {
+            float dx = 0.001; // Small step in x
+            float dy = 0.001; // Small step in y
+        
             // Partial derivatives
-            float dfdx = curve(fCoord, A, k);
-            float dfdy = 0.0;
+            float dz_dx = (height(fCoord.x + dx, fCoord.y) - height(fCoord.x - dx, fCoord.y)) / (2.0 * dx);
+            float dz_dy = (height(fCoord.x, fCoord.y + dy) - height(fCoord.x, fCoord.y - dy)) / (2.0 * dy);
         
             // Tangent vectors
-            float3 tangentX = float3(1.0, 0.0, dfdx);
-            float3 tangentY = float3(0.0, 1.0, dfdy);
+            float3 tangent_x = float3(1.0, 0.0, dz_dx);
+            float3 tangent_y = float3(0.0, 1.0, dz_dy);
         
-            // Normal vector
-            float3 normal = normalize(cross(tangentX, tangentY));
+            // Normal vector (normalized)
+            float3 normal = normalize(cross(tangent_x, tangent_y));
         
             return normal;
         }
@@ -178,17 +213,14 @@ object Shaders {
             }
         
             float2 uv = fragCoord / iResolution; // Normalize screen coordinates
-            
-            float A = 0.05;
-            float k = 0.3;
         
             float2 eyeVector = (uv * 2.0) - 1.0;
-            float depth = curve(fragCoord, A, k) * 0.04;
-            float3 incident = float3(eyeVector.x * 0.01, depth, 1.0);
-            float3 normal = computeNormal(fragCoord, A, k);
+            float depth = curve(fragCoord, $ARG_CURVE_PARAM_A, $ARG_CURVE_PARAM_K) * 0.05;
+            float3 incident = float3(eyeVector.x * 0.02, depth, 1.0);
+            float3 normal = calculateNormal(fragCoord);
             float ior = 1.0/$ARG_REFRACTION_INDEX;
             
-            float aberationIndex = 0.02;
+            float aberationIndex = $ARG_ABERRATION_INDEX;
             float iorR = ior - aberationIndex;
             float iorG = ior;
             float iorB = ior + aberationIndex;
