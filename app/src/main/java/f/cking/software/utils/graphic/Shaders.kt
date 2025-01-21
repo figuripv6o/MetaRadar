@@ -142,6 +142,7 @@ object Shaders {
     const val ARG_ELEVATION = "elevation"
     const val ARG_REFRACTION_INDEX = "refractionIndex"
     const val ARG_RESOLUTION = "iResolution"
+    const val ARG_PANEL_HEIGHT = "panelHeigh"
 
     @Language("AGSL")
     val GLASS_SHADER_ADVANCED = """
@@ -149,10 +150,15 @@ object Shaders {
         uniform float $ARG_ELEVATION;
         uniform float $ARG_REFRACTION_INDEX;
         uniform float2 $ARG_RESOLUTION;
+        uniform float $ARG_PANEL_HEIGHT;
+        
+        float curve(float2 fCoord, float A, float k) {
+            return A * k * cos(k * fCoord.x);
+        }
 
         float3 computeNormal(float2 fCoord, float A, float k) {
             // Partial derivatives
-            float dfdx = A * k * cos(k * fCoord.x);
+            float dfdx = curve(fCoord, A, k);
             float dfdy = 0.0;
         
             // Tangent vectors
@@ -164,17 +170,25 @@ object Shaders {
         
             return normal;
         }
-
         
         float4 main(float2 fragCoord) {
         
-            float2 uv = fragCoord.xy / iResolution.xy; // Normalize screen coordinates
+            if (fragCoord.y < iResolution.y - $ARG_PANEL_HEIGHT) {
+                return content.eval(fragCoord);
+            }
         
-            float3 incident = float3(0.1, 0.0, 1.0);
-            float3 normal = computeNormal(fragCoord.xy, 0.1, 0.3);
+            float2 uv = fragCoord / iResolution; // Normalize screen coordinates
+            
+            float A = 0.1;
+            float k = 0.3;
+        
+            float2 eyeVector = (uv * 2.0) - 1.0;
+            float depth = curve(fragCoord, A, k) * 0.02;
+            float3 incident = float3(eyeVector.x * 0.01, depth, 1.0);
+            float3 normal = computeNormal(fragCoord, A, k);
+            //float3 normal = float3(0.0, 0.0, -1.0);
             float ior = 1.0/1.5;
             
-            // find refraction targed based on angle and refraction factor
             float3 refracted = refract(incident, normal, ior);
         
         	return content.eval((uv + refracted.xy) * iResolution.xy);

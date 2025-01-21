@@ -140,39 +140,23 @@ fun GlassBottomSpace(
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 fun Modifier.glassBottom(
     heightPx: Float,
-    blur: Float = 0f,
     refractionIndex: Float = 1.44f, // glass refraction
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
 ): Modifier = composed {
 
-    val contentShader = remember { RuntimeShader(Shaders.SHADER_CONTENT) }
-    val effectAreaShader = remember { RuntimeShader(Shaders.SHADER_EFFECT_AREA) }
     val glassShader = remember { RuntimeShader(Shaders.GLASS_SHADER_ADVANCED) }
 
-    contentShader.setFloatUniform("blurredHeight", heightPx)
-    effectAreaShader.setFloatUniform("blurredHeight", heightPx)
     glassShader.setFloatUniform(Shaders.ARG_ELEVATION, elevationPx)
     glassShader.setFloatUniform(Shaders.ARG_REFRACTION_INDEX, refractionIndex)
+    glassShader.setFloatUniform(Shaders.ARG_PANEL_HEIGHT, heightPx)
 
     this
         .onSizeChanged {
-            contentShader.setFloatUniform(Shaders.ARG_RESOLUTION, it.width.toFloat(), it.height.toFloat())
-            effectAreaShader.setFloatUniform(Shaders.ARG_RESOLUTION, it.width.toFloat(), it.height.toFloat())
             glassShader.setFloatUniform(Shaders.ARG_RESOLUTION, it.width.toFloat(), it.height.toFloat())
         }
         .graphicsLayer {
             renderEffect = RenderEffect
-                .createBlendModeEffect(
-                    RenderEffect.createRuntimeShaderEffect(contentShader, Shaders.ARG_CONTENT),
-                    RenderEffect.createChainEffect(
-                        RenderEffect.createRuntimeShaderEffect(effectAreaShader, Shaders.ARG_CONTENT),
-                        RenderEffect.createChainEffect(
-                            RenderEffect.createRuntimeShaderEffect(glassShader, Shaders.ARG_CONTENT),
-                            RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.MIRROR),
-                        )
-                    ),
-                    BlendMode.SRC_OVER,
-                )
+                .createRuntimeShaderEffect(glassShader, Shaders.ARG_CONTENT)
                 .asComposeRenderEffect()
         }
 }
