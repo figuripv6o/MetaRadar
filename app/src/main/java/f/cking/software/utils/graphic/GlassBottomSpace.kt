@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import f.cking.software.dpToPx
 import f.cking.software.letIf
+import f.cking.software.utils.graphic.glass.GlassShader
+import f.cking.software.utils.graphic.glass.RefractionMaterial
+import f.cking.software.utils.graphic.glass.glassPanel
 import kotlin.math.max
 
 @Composable
@@ -137,7 +140,7 @@ fun GlassBottomSpace(
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 fun Modifier.glassBottom(
     heightPx: Float,
-    curveType: Shaders.CurveType = Shaders.CurveType.Mod,
+    curveType: GlassShader.CurveType = GlassShader.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
 ): Modifier = composed {
 

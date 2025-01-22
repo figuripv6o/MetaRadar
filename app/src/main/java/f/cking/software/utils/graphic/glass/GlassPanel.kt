@@ -1,4 +1,4 @@
-package f.cking.software.utils.graphic
+package f.cking.software.utils.graphic.glass
 
 import android.graphics.Rect
 import android.graphics.RenderEffect
@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import f.cking.software.dpToPx
-import f.cking.software.utils.graphic.Shaders.CurveType.Companion.getType
+import f.cking.software.utils.graphic.glass.GlassShader.CurveType.Companion.getType
 
 @Composable
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -24,7 +24,7 @@ fun Modifier.glassPanel(
     rect: Rect,
     material: RefractionMaterial = RefractionMaterial.GLASS,
     aberrationIndex: Float = 0.1f,
-    curveType: Shaders.CurveType = Shaders.CurveType.Mod,
+    curveType: GlassShader.CurveType = GlassShader.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
 ): Modifier = this.glassPanel(
     rect = rect,
@@ -40,25 +40,25 @@ fun Modifier.glassPanel(
     rect: Rect,
     refractionIndex: Float = RefractionMaterial.GLASS.refractionIndex,
     aberrationIndex: Float = 0.1f,
-    curveType: Shaders.CurveType = Shaders.CurveType.Mod,
+    curveType: GlassShader.CurveType = GlassShader.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
 ): Modifier = composed {
 
-    val glassShader = remember { RuntimeShader(Shaders.GLASS_SHADER_ADVANCED) }
+    val glassShader = remember { RuntimeShader(GlassShader.GLASS_SHADER_ADVANCED) }
     val contentSize = remember { mutableStateOf(Size(0.0f, 0.0f)) }
 
-    glassShader.setFloatUniform(Shaders.ARG_ELEVATION, elevationPx)
-    glassShader.setFloatUniform(Shaders.ARG_REFRACTION_INDEX, refractionIndex)
-    glassShader.setIntUniform(Shaders.ARG_CURVE_TYPE, curveType::class.getType())
-    glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_A, curveType.A)
-    glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_K, curveType.k)
-    glassShader.setFloatUniform(Shaders.ARG_ABERRATION_INDEX, aberrationIndex)
+    glassShader.setFloatUniform(GlassShader.ARG_ELEVATION, elevationPx)
+    glassShader.setFloatUniform(GlassShader.ARG_REFRACTION_INDEX, refractionIndex)
+    glassShader.setIntUniform(GlassShader.ARG_CURVE_TYPE, curveType::class.getType())
+    glassShader.setFloatUniform(GlassShader.ARG_CURVE_PARAM_A, curveType.A)
+    glassShader.setFloatUniform(GlassShader.ARG_CURVE_PARAM_K, curveType.k)
+    glassShader.setFloatUniform(GlassShader.ARG_ABERRATION_INDEX, aberrationIndex)
 
-    glassShader.setFloatUniform(Shaders.ARG_RESOLUTION, contentSize.value.width.toFloat(), contentSize.value.height.toFloat())
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_HEIGHT, rect.height().toFloat())
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_WIDTH, rect.width().toFloat())
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_X, rect.left.toFloat())
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_Y, rect.top.toFloat())
+    glassShader.setFloatUniform(GlassShader.ARG_RESOLUTION, contentSize.value.width.toFloat(), contentSize.value.height.toFloat())
+    glassShader.setFloatUniform(GlassShader.ARG_PANEL_HEIGHT, rect.height().toFloat())
+    glassShader.setFloatUniform(GlassShader.ARG_PANEL_WIDTH, rect.width().toFloat())
+    glassShader.setFloatUniform(GlassShader.ARG_PANEL_X, rect.left.toFloat())
+    glassShader.setFloatUniform(GlassShader.ARG_PANEL_Y, rect.top.toFloat())
 
     this
         .onSizeChanged {
@@ -67,7 +67,7 @@ fun Modifier.glassPanel(
         .then(
             graphicsLayer {
                 renderEffect = RenderEffect
-                    .createRuntimeShaderEffect(glassShader, Shaders.ARG_CONTENT)
+                    .createRuntimeShaderEffect(glassShader, GlassShader.ARG_CONTENT)
                     .asComposeRenderEffect()
             }
         )

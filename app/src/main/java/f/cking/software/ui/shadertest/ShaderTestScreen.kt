@@ -49,9 +49,9 @@ import androidx.compose.ui.unit.dp
 import f.cking.software.BuildConfig
 import f.cking.software.R
 import f.cking.software.letIf
-import f.cking.software.utils.graphic.RefractionMaterial
-import f.cking.software.utils.graphic.Shaders
-import f.cking.software.utils.graphic.glassPanel
+import f.cking.software.utils.graphic.glass.GlassShader
+import f.cking.software.utils.graphic.glass.RefractionMaterial
+import f.cking.software.utils.graphic.glass.glassPanel
 import f.cking.software.utils.graphic.pxToDp
 import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Router
@@ -232,10 +232,10 @@ object ShaderTestScreen {
         }
     }
 
-    private enum class GlassType(val curveType: (A: Float, k: Float) -> Shaders.CurveType, val nameRes: Int, val imageRes: Int?, val curveSupport: Boolean) {
-        MOD({ A, k -> Shaders.CurveType.Mod(A, k) }, R.string.shader_test_glass_type_mod, R.drawable.glass_type_fluted, curveSupport = true),
-        SIN({ A, k -> Shaders.CurveType.Sin(A, k) }, R.string.shader_test_glass_type_sin, R.drawable.glass_type_curved, curveSupport = true),
-        FLAT({ _, _ -> Shaders.CurveType.Flat }, R.string.shader_test_glass_type_flat, null, curveSupport = false),
+    private enum class GlassType(val curveType: (A: Float, k: Float) -> GlassShader.CurveType, val nameRes: Int, val imageRes: Int?, val curveSupport: Boolean) {
+        MOD({ A, k -> GlassShader.CurveType.Mod(A, k) }, R.string.shader_test_glass_type_mod, R.drawable.glass_type_fluted, curveSupport = true),
+        SIN({ A, k -> GlassShader.CurveType.Sin(A, k) }, R.string.shader_test_glass_type_sin, R.drawable.glass_type_curved, curveSupport = true),
+        FLAT({ _, _ -> GlassShader.CurveType.Flat }, R.string.shader_test_glass_type_flat, null, curveSupport = false),
     }
 
     @Composable
