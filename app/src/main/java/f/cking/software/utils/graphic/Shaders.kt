@@ -154,6 +154,7 @@ object Shaders {
     sealed class CurveType(val type: Int, val A: Float, val k: Float) {
         object Sin : CurveType(0, 0.03f, 0.3f)
         object Mod : CurveType(1, 0.1f, 0.25f)
+        object Flat : CurveType(2, 0.0f, 0.0f)
     }
 
     @Language("AGSL")
@@ -185,6 +186,8 @@ object Shaders {
                     return curveSin(fCoord, A, k);
                 case ${CurveType.Mod.type}:
                     return curveMod(fCoord, A, k);
+                case ${CurveType.Flat.type}:
+                    return 0.0;
             }
             
             return 0.0;
@@ -212,9 +215,13 @@ object Shaders {
             return normal;
         }
         
+        bool isInsidePanel(float2 fCoord) {
+            return fCoord.x >= $ARG_PANEL_X && fCoord.x < $ARG_PANEL_X + $ARG_PANEL_WIDTH && fCoord.y > $ARG_PANEL_Y && fCoord.y < $ARG_PANEL_Y + $ARG_PANEL_HEIGHT;
+        }
+        
         float4 main(float2 fragCoord) {
         
-            if (!(fragCoord.x >= $ARG_PANEL_X && fragCoord.x < $ARG_PANEL_X + $ARG_PANEL_WIDTH && fragCoord.y > $ARG_PANEL_Y && fragCoord.y < $ARG_PANEL_Y + $ARG_PANEL_HEIGHT)) {
+            if (!isInsidePanel(fragCoord)) {
                 return content.eval(fragCoord);
             }
         
@@ -235,10 +242,10 @@ object Shaders {
             float2 refractedG = refract(incident, normal, iorG).xy;
             float2 refractedB = refract(incident, normal, iorB).xy;
             
-            float r = content.eval((uv + refractedR) * iResolution).r;
-            float g = content.eval((uv + refractedG) * iResolution).g;
-            float b = content.eval((uv + refractedB) * iResolution).b;
-            float a = content.eval((uv + refractedG) * iResolution).a;
+            float r = $ARG_CONTENT.eval((uv + refractedR) * iResolution).r;
+            float g = $ARG_CONTENT.eval((uv + refractedG) * iResolution).g;
+            float b = $ARG_CONTENT.eval((uv + refractedB) * iResolution).b;
+            float a = $ARG_CONTENT.eval((uv + refractedG) * iResolution).a;
             
             return float4(r, g, b, a);
         }

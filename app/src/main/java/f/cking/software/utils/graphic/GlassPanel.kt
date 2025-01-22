@@ -37,7 +37,7 @@ fun Modifier.glassPanel(
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 fun Modifier.glassPanel(
     rect: Rect,
-    refractionIndex: Float = 1.44f, // glass refraction
+    refractionIndex: Float = RefractionMaterial.GLASS.refractionIndex,
     aberrationIndex: Float = 0.1f,
     curveType: Shaders.CurveType = Shaders.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),

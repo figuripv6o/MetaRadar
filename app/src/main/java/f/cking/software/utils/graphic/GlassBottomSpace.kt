@@ -162,6 +162,7 @@ fun Modifier.glassBottom(
         )
 }
 
+@Deprecated("Use glassBottom instead, I want to keep this code here for historical reasons", ReplaceWith("glassBottom()"))
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 fun Modifier.blurBottom(heightPx: Float, blur: Float, glassCurveSizeDp: Float): Modifier = composed {
     val context = LocalContext.current
