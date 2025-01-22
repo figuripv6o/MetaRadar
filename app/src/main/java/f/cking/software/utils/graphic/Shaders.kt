@@ -228,8 +228,8 @@ object Shaders {
             float2 uv = fragCoord / iResolution; // Normalize screen coordinates
         
             float2 eyeVector = (uv * 2.0) - 1.0;
-            float depth = curve(fragCoord, $ARG_CURVE_PARAM_A, $ARG_CURVE_PARAM_K) * 0.05;
-            float3 incident = float3(eyeVector.x * 0.02, depth, 1.0);
+            float depth = -curve(fragCoord, $ARG_CURVE_PARAM_A, $ARG_CURVE_PARAM_K) * ($ARG_CURVE_PARAM_A / 2.0);
+            float3 incident = float3(eyeVector.x * 0.02, -eyeVector.y * 0.001 + depth * 0.2, 1.0);
             float3 normal = calculateNormal(fragCoord);
             float ior = 1.0/$ARG_REFRACTION_INDEX;
             
