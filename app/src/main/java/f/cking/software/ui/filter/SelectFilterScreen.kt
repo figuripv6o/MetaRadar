@@ -26,6 +26,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -58,7 +59,7 @@ object SelectFilterScreen {
                 AppBar(scrollBehavior) { router.navigate(BackCommand) }
             },
             content = { paddings ->
-                var bottomBarHeight by mutableStateOf(0f)
+                var bottomBarHeight by remember { mutableStateOf(0f) }
                 GlassBottomSpace(
                     modifier = Modifier.fillMaxSize(),
                     globalContent = {

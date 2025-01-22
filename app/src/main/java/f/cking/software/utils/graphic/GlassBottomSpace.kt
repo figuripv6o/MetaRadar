@@ -2,6 +2,7 @@ package f.cking.software.utils.graphic
 
 import android.annotation.SuppressLint
 import android.graphics.BlendMode
+import android.graphics.Rect
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.graphics.Shader
@@ -45,7 +46,6 @@ fun GlassBottomNavBar(
     GlassBottomSpace(
         modifier = modifier,
         blur = blur,
-        glassCurveSizeDp = glassCurveSizeDp,
         fallbackColor = fallbackColor,
         overlayColor = overlayColor,
         bottomContent = { BottomNavigationSpacer() }
@@ -58,7 +58,6 @@ fun GlassBottomNavBar(
 fun GlassSystemNavbar(
     modifier: Modifier = Modifier,
     blur: Float = 3f,
-    glassCurveSizeDp: Float = 3f,
     fallbackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     overlayColor: Color = Color.Transparent,
     content: @Composable () -> Unit,
@@ -66,7 +65,6 @@ fun GlassSystemNavbar(
     GlassBottomSpace(
         modifier = modifier,
         blur = blur,
-        glassCurveSizeDp = glassCurveSizeDp,
         fallbackColor = fallbackColor,
         overlayColor = overlayColor,
         bottomContent = { SystemNavbarSpacer() }
@@ -81,7 +79,6 @@ fun GlassBottomSpace(
     modifier: Modifier = Modifier,
     height: Dp? = null,
     blur: Float = 3f,
-    glassCurveSizeDp: Float = 3f,
     zIndex: Float = 1f,
     fallbackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     overlayColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f),
@@ -96,7 +93,6 @@ fun GlassBottomSpace(
             modifier = Modifier
                 .fillMaxWidth()
                 .letIf(isRenderEffectSupported && navbarHeightPx.value != null) {
-                    //it.blurBottom(heightPx = navbarHeightPx.value!!, blur = blur, glassCurveSizeDp = glassCurveSizeDp)
                     it.glassBottom(heightPx = navbarHeightPx.value!!)
                 }
         ) {
@@ -141,38 +137,28 @@ fun GlassBottomSpace(
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 fun Modifier.glassBottom(
     heightPx: Float,
-    refractionIndex: Float = 1.44f, // glass refraction
-    aberrationIndex: Float = 0.1f,
     curveType: Shaders.CurveType = Shaders.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
 ): Modifier = composed {
 
-    val glassShader = remember { RuntimeShader(Shaders.GLASS_SHADER_ADVANCED) }
     val contentSize = remember { mutableStateOf(Size(0.0f, 0.0f)) }
-
-    glassShader.setFloatUniform(Shaders.ARG_ELEVATION, elevationPx)
-    glassShader.setFloatUniform(Shaders.ARG_REFRACTION_INDEX, refractionIndex)
-    glassShader.setIntUniform(Shaders.ARG_CURVE_TYPE, curveType.type)
-    glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_A, curveType.A)
-    glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_K, curveType.k)
-    glassShader.setFloatUniform(Shaders.ARG_ABERRATION_INDEX, aberrationIndex)
-
-    glassShader.setFloatUniform(Shaders.ARG_RESOLUTION, contentSize.value.width.toFloat(), contentSize.value.height.toFloat())
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_HEIGHT, heightPx)
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_WIDTH, contentSize.value.width.toFloat())
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_X, 0.0f)
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_Y, contentSize.value.height.toFloat() - heightPx)
 
     this
         .onSizeChanged {
             contentSize.value = Size(it.width.toFloat(), it.height.toFloat())
         }
         .then(
-            graphicsLayer {
-                renderEffect = RenderEffect
-                    .createRuntimeShaderEffect(glassShader, Shaders.ARG_CONTENT)
-                    .asComposeRenderEffect()
-            }
+            glassPanel(
+                rect = Rect(
+                    0,
+                    (contentSize.value.height - heightPx).toInt(),
+                    contentSize.value.width.toInt(),
+                    contentSize.value.height.toInt(),
+                ),
+                curveType = curveType,
+                elevationPx = elevationPx,
+                material = RefractionMaterial.GLASS,
+            )
         )
 }
 
