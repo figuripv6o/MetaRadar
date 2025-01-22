@@ -8,6 +8,8 @@ import android.util.TypedValue
 import android.view.Display
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import timber.log.Timber
 import java.security.MessageDigest
@@ -108,6 +110,11 @@ fun Context.openUrl(url: String) {
 
 fun Context.dpToPx(value: Float): Int =
     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics).toInt()
+
+@Composable
+fun Float.toPx(): Int {
+    return LocalContext.current.dpToPx(this)
+}
 
 fun Context.pxToDp(value: Float): Float = value / resources.displayMetrics.density
 

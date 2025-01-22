@@ -14,6 +14,7 @@
     <string name="ok">OK</string>
     <string name="turn_on">Turn on</string>
     <string name="report">Report</string>
+    <string name="shaders_test">Shaders test</string>
 
     <plurals name="day">
         <item quantity="zero">%d days</item>
@@ -284,4 +285,14 @@
     <string name="permission_data_coolect_info">The application does not collect or transmit data. The project is fully open source and available on github</string>
     <string name="grant_permissions_manually">Grant the necessary permissions manually</string>
     <string name="cannot_open_the_url">Cannot open the url</string>
+
+    <!-- Shader test -->
+    <string name="shader_test_title" translatable="false">Shaders test</string>
+    <string name="shader_test_panel_size">Glass scale: %d\%%</string>
+    <string name="shader_test_glass_aberration">Aberration index: %.1f</string>
+    <string name="shader_test_glass_refraction">Refraction index: %.2f</string>
+    <string name="shader_test_glass_type">Glass type</string>
+    <string name="shader_test_glass_type_sin">Curvid</string>
+    <string name="shader_test_glass_type_mod">Fluted</string>
+    <string name="shader_test_glass_type_flat">Flat</string>
 </resources>

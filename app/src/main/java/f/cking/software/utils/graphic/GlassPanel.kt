@@ -73,12 +73,12 @@ fun Modifier.glassPanel(
 }
 
 enum class RefractionMaterial(val refractionIndex: Float) {
+    VACUUM(1.0f),
     AIR(1.0003f),
+    ICE(1.31f),
     WATER(1.33f),
     GLASS(1.5f),
     SAPPHIRE(1.77f),
-    DIAMOND(2.42f),
-    ICE(1.31f),
     PLASTIC(1.5f),
-    VACUUM(1.0f),
+    DIAMOND(2.42f),
 }

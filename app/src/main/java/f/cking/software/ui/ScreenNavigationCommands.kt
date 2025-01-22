@@ -12,6 +12,7 @@ import f.cking.software.ui.profiledetails.ProfileDetailsScreen
 import f.cking.software.ui.selectdevice.SelectDeviceScreen
 import f.cking.software.ui.selectlocation.SelectLocationScreen
 import f.cking.software.ui.selectmanufacturer.SelectManufacturerScreen
+import f.cking.software.ui.shadertest.ShaderTestScreen
 import f.cking.software.utils.navigation.AddToStackCommand
 import f.cking.software.utils.navigation.BackCommand
 
@@ -44,6 +45,10 @@ object ScreenNavigationCommands {
 
     class OpenDeviceDetailsScreen(val address: String) : AddToStackCommand(screenFunction = { key, _ ->
         DeviceDetailsScreen.Screen(address = address, key)
+    })
+
+    object OpenShaderTestScreen : AddToStackCommand(screenFunction = { key, router ->
+        ShaderTestScreen.Screen(router)
     })
 
     class OpenSelectLocationScreen(
