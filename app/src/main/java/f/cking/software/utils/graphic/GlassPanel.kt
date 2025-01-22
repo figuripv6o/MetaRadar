@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import f.cking.software.dpToPx
+import f.cking.software.utils.graphic.Shaders.CurveType.Companion.getType
 
 @Composable
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -48,7 +49,7 @@ fun Modifier.glassPanel(
 
     glassShader.setFloatUniform(Shaders.ARG_ELEVATION, elevationPx)
     glassShader.setFloatUniform(Shaders.ARG_REFRACTION_INDEX, refractionIndex)
-    glassShader.setIntUniform(Shaders.ARG_CURVE_TYPE, curveType.type)
+    glassShader.setIntUniform(Shaders.ARG_CURVE_TYPE, curveType::class.getType())
     glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_A, curveType.A)
     glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_K, curveType.k)
     glassShader.setFloatUniform(Shaders.ARG_ABERRATION_INDEX, aberrationIndex)

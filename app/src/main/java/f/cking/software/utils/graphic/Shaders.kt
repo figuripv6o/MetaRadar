@@ -1,6 +1,8 @@
 package f.cking.software.utils.graphic
 
+import f.cking.software.utils.graphic.Shaders.CurveType.Companion.getType
 import org.intellij.lang.annotations.Language
+import kotlin.reflect.KClass
 
 object Shaders {
     const val ARG_CONTENT = "content"
@@ -151,10 +153,30 @@ object Shaders {
     const val ARG_CURVE_PARAM_K = "curveParamK"
     const val ARG_ABERRATION_INDEX = "aberrationIndex"
 
-    sealed class CurveType(val type: Int, val A: Float, val k: Float) {
-        object Sin : CurveType(0, 0.03f, 0.3f)
-        object Mod : CurveType(1, 0.1f, 0.25f)
-        object Flat : CurveType(2, 0.0f, 0.0f)
+    sealed interface CurveType {
+        val A: Float
+        val k: Float
+
+        data class Sin(override val A: Float = 0.03f, override val k: Float = 0.3f) : CurveType
+        data class Mod(override val A: Float = 0.1f, override val k: Float = 0.25f) : CurveType
+        object Flat : CurveType {
+            override val k: Float = 0.0f
+            override val A: Float = 0.0f
+        }
+
+        companion object {
+            val Sin = Sin()
+            val Mod = Mod()
+
+            fun KClass<out CurveType>.getType(): Int {
+                return when {
+                    this == Sin::class -> 0
+                    this == Mod::class -> 1
+                    this == Flat::class -> 2
+                    else -> throw IllegalStateException("Type matcher is not implemented for CurveType: $this")
+                }
+            }
+        }
     }
 
     @Language("AGSL")
@@ -177,16 +199,16 @@ object Shaders {
         }
         
         float curveMod(float2 fCoord, float A, float k) {
-            return -pow(mod(fCoord.x * k - 2.0, 4.0) - 2.0, 2.0) * A * k - A * k * 2;
+            return pow(mod(fCoord.x * k - 2.0, 4.0) - 2.0, 2.0) * A * k - A * k * 2;
         }
         
         float curve(float2 fCoord, float A, float k) {
             switch($ARG_CURVE_TYPE) {
-                case ${CurveType.Sin.type}:
+                case ${CurveType.Sin::class.getType()}:
                     return curveSin(fCoord, A, k);
-                case ${CurveType.Mod.type}:
+                case ${CurveType.Mod::class.getType()}:
                     return curveMod(fCoord, A, k);
-                case ${CurveType.Flat.type}:
+                case ${CurveType.Flat::class.getType()}:
                     return 0.0;
             }
             
@@ -228,8 +250,8 @@ object Shaders {
             float2 uv = fragCoord / iResolution; // Normalize screen coordinates
         
             float2 eyeVector = (uv * 2.0) - 1.0;
-            float depth = -curve(fragCoord, $ARG_CURVE_PARAM_A, $ARG_CURVE_PARAM_K) * ($ARG_CURVE_PARAM_A / 2.0);
-            float3 incident = float3(eyeVector.x * 0.02, -eyeVector.y * 0.001 + depth * 0.2, 1.0);
+            float depth = curve(fragCoord, $ARG_CURVE_PARAM_A, $ARG_CURVE_PARAM_K) * ($ARG_CURVE_PARAM_A / 2.0);
+            float3 incident = float3(eyeVector.x * 0.02, -eyeVector.y * 0.001 + depth * 0.2, -1.0);
             float3 normal = calculateNormal(fragCoord);
             float ior = 1.0/$ARG_REFRACTION_INDEX;
             

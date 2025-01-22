@@ -295,4 +295,6 @@
     <string name="shader_test_glass_type_sin">Curved</string>
     <string name="shader_test_glass_type_mod">Fluted</string>
     <string name="shader_test_glass_type_flat">Flat</string>
+    <string name="shader_test_curve_amplitude">Curve amplitude: %.2f</string>
+    <string name="shader_test_curve_length">Curve length: %.2f</string>
 </resources>
