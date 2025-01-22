@@ -143,6 +143,9 @@ object Shaders {
     const val ARG_REFRACTION_INDEX = "refractionIndex"
     const val ARG_RESOLUTION = "iResolution"
     const val ARG_PANEL_HEIGHT = "panelHeigh"
+    const val ARG_PANEL_WIDTH = "panelWidth"
+    const val ARG_PANEL_X = "panelX"
+    const val ARG_PANEL_Y = "panelY"
     const val ARG_CURVE_TYPE = "curveType"
     const val ARG_CURVE_PARAM_A = "curveParamA"
     const val ARG_CURVE_PARAM_K = "curveParamK"
@@ -160,6 +163,9 @@ object Shaders {
         uniform float $ARG_REFRACTION_INDEX;
         uniform float2 $ARG_RESOLUTION;
         uniform float $ARG_PANEL_HEIGHT;
+        uniform float $ARG_PANEL_WIDTH;
+        uniform float $ARG_PANEL_X;
+        uniform float $ARG_PANEL_Y;
         uniform int $ARG_CURVE_TYPE;
         uniform float $ARG_CURVE_PARAM_A;
         uniform float $ARG_CURVE_PARAM_K;
@@ -208,7 +214,7 @@ object Shaders {
         
         float4 main(float2 fragCoord) {
         
-            if (fragCoord.y < iResolution.y - $ARG_PANEL_HEIGHT) {
+            if (!(fragCoord.x >= $ARG_PANEL_X && fragCoord.x < $ARG_PANEL_X + $ARG_PANEL_WIDTH && fragCoord.y > $ARG_PANEL_Y && fragCoord.y < $ARG_PANEL_Y + $ARG_PANEL_HEIGHT)) {
                 return content.eval(fragCoord);
             }
         

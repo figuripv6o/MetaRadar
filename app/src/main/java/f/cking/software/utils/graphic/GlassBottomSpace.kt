@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
@@ -147,24 +148,32 @@ fun Modifier.glassBottom(
 ): Modifier = composed {
 
     val glassShader = remember { RuntimeShader(Shaders.GLASS_SHADER_ADVANCED) }
+    val contentSize = remember { mutableStateOf(Size(0.0f, 0.0f)) }
 
     glassShader.setFloatUniform(Shaders.ARG_ELEVATION, elevationPx)
     glassShader.setFloatUniform(Shaders.ARG_REFRACTION_INDEX, refractionIndex)
-    glassShader.setFloatUniform(Shaders.ARG_PANEL_HEIGHT, heightPx)
     glassShader.setIntUniform(Shaders.ARG_CURVE_TYPE, curveType.type)
     glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_A, curveType.A)
     glassShader.setFloatUniform(Shaders.ARG_CURVE_PARAM_K, curveType.k)
     glassShader.setFloatUniform(Shaders.ARG_ABERRATION_INDEX, aberrationIndex)
 
+    glassShader.setFloatUniform(Shaders.ARG_RESOLUTION, contentSize.value.width.toFloat(), contentSize.value.height.toFloat())
+    glassShader.setFloatUniform(Shaders.ARG_PANEL_HEIGHT, heightPx)
+    glassShader.setFloatUniform(Shaders.ARG_PANEL_WIDTH, contentSize.value.width.toFloat())
+    glassShader.setFloatUniform(Shaders.ARG_PANEL_X, 0.0f)
+    glassShader.setFloatUniform(Shaders.ARG_PANEL_Y, contentSize.value.height.toFloat() - heightPx)
+
     this
         .onSizeChanged {
-            glassShader.setFloatUniform(Shaders.ARG_RESOLUTION, it.width.toFloat(), it.height.toFloat())
+            contentSize.value = Size(it.width.toFloat(), it.height.toFloat())
         }
-        .graphicsLayer {
-            renderEffect = RenderEffect
-                .createRuntimeShaderEffect(glassShader, Shaders.ARG_CONTENT)
-                .asComposeRenderEffect()
-        }
+        .then(
+            graphicsLayer {
+                renderEffect = RenderEffect
+                    .createRuntimeShaderEffect(glassShader, Shaders.ARG_CONTENT)
+                    .asComposeRenderEffect()
+            }
+        )
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
