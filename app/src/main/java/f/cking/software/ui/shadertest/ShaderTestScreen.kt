@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import f.cking.software.BuildConfig
 import f.cking.software.R
 import f.cking.software.letIf
+import f.cking.software.utils.graphic.GlassSystemNavbar
 import f.cking.software.utils.graphic.glass.GlassShader
 import f.cking.software.utils.graphic.glass.RefractionMaterial
 import f.cking.software.utils.graphic.glass.glassPanel
@@ -79,7 +80,12 @@ object ShaderTestScreen {
             modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = { AppBar(scrollBehavior) { router.navigate(BackCommand) } },
             content = { paddings ->
-                Content(Modifier.padding(paddings))
+                GlassSystemNavbar(
+                    modifier = Modifier.fillMaxSize(),
+                    content = {
+                        Content(Modifier.padding(top = paddings.calculateTopPadding()))
+                    },
+                )
             }
         )
     }
