@@ -292,7 +292,7 @@
     <string name="shader_test_glass_aberration">Aberration index: %.1f</string>
     <string name="shader_test_glass_refraction">Refraction index: %.2f</string>
     <string name="shader_test_glass_type">Glass type</string>
-    <string name="shader_test_glass_type_sin">Curvid</string>
+    <string name="shader_test_glass_type_sin">Curved</string>
     <string name="shader_test_glass_type_mod">Fluted</string>
     <string name="shader_test_glass_type_flat">Flat</string>
 </resources>
