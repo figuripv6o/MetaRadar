@@ -1,6 +1,7 @@
 package f.cking.software.ui
 
 import android.annotation.SuppressLint
+import android.app.ComponentCaller
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -87,6 +88,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        intentHelper.tryHandleIntent(intent)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -98,6 +101,11 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         intentHelper.handleActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
+        super.onNewIntent(intent, caller)
+        intentHelper.tryHandleIntent(intent)
     }
 
     @SuppressLint("MissingSuperCall")

@@ -131,10 +131,8 @@ class MainViewModel(
 
     private fun checkPermissions(granted: () -> Unit) {
         permissionHelper.checkBlePermissions {
-            permissionHelper.checkBlePermissions(permissions = PermissionHelper.BACKGROUND_LOCATION) {
-                permissionHelper.checkDozeModePermission()
-                granted.invoke()
-            }
+            permissionHelper.checkDozeModePermission()
+            granted.invoke()
         }
     }
 

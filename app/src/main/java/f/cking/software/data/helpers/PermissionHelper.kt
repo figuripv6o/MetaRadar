@@ -82,6 +82,10 @@ class PermissionHelper(
         return (BLE_PERMISSIONS + BACKGROUND_LOCATION).all { checkPermission(it) }
     }
 
+    fun checkBackgroundLocationPermition(): Boolean {
+        return checkPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    }
+
     fun checkLocationPermission(): Boolean {
         return checkPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     }

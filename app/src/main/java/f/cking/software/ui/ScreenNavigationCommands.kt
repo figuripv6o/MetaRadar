@@ -51,6 +51,10 @@ object ScreenNavigationCommands {
         ShaderTestScreen.Screen(router)
     })
 
+    object OpenBackgroundLocationScreen : AddToStackCommand(screenFunction = { key, router ->
+        // TODO()
+    })
+
     class OpenSelectLocationScreen(
         initialLocationModel: LocationModel?,
         initialRadius: Float?,
