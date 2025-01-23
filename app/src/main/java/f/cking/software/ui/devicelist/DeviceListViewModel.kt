@@ -11,7 +11,9 @@ import androidx.lifecycle.viewModelScope
 import f.cking.software.BuildConfig
 import f.cking.software.R
 import f.cking.software.checkRegexSafe
+import f.cking.software.collectAsState
 import f.cking.software.data.helpers.IntentHelper
+import f.cking.software.data.helpers.PermissionHelper
 import f.cking.software.data.repo.DevicesRepository
 import f.cking.software.data.repo.SettingsRepository
 import f.cking.software.domain.interactor.CheckNeedToShowEnjoyTheAppInteractor
@@ -25,6 +27,7 @@ import f.cking.software.ui.ScreenNavigationCommands
 import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +37,7 @@ class DeviceListViewModel(
     private val context: Application,
     private val devicesRepository: DevicesRepository,
     private val filterCheckerImpl: FilterCheckerImpl,
+    private val permissionHelper: PermissionHelper,
     val router: Router,
     private val checkNeedToShowEnjoyTheAppInteractor: CheckNeedToShowEnjoyTheAppInteractor,
     private val enjoyTheAppAskLaterInteractor: EnjoyTheAppAskLaterInteractor,
@@ -57,6 +61,9 @@ class DeviceListViewModel(
         )
     )
     var enjoyTheAppState: EnjoyTheAppState by mutableStateOf(EnjoyTheAppState.None)
+    val showBackgroundPermissionWarning: Boolean by permissionHelper.observeBackgroundLocationPermission()
+        .map { !it }
+        .collectAsState(viewModelScope, false)
 
     private var scannerObservingJob: Job? = null
     private var lastBatchJob: Job? = null
@@ -146,6 +153,10 @@ class DeviceListViewModel(
         viewModelScope.launch {
             loadNextPage()
         }
+    }
+
+    fun onBackgraundLocationWarningClick() {
+        router.navigate(ScreenNavigationCommands.OpenBackgroundLocationScreen)
     }
 
     fun onScrollEnd() {

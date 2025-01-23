@@ -10,12 +10,16 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -45,7 +49,7 @@ fun GlassBottomNavBar(
     glassCurveSizeDp: Float = 3f,
     fallbackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     overlayColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f),
-    content: @Composable () -> Unit,
+    content: @Composable (bottomPadding: PaddingValues) -> Unit,
 ) {
     GlassBottomSpace(
         modifier = modifier,
@@ -53,8 +57,8 @@ fun GlassBottomNavBar(
         fallbackColor = fallbackColor,
         overlayColor = overlayColor,
         bottomContent = { BottomNavigationSpacer() }
-    ) {
-        content()
+    ) { padding ->
+        content(padding)
     }
 }
 
@@ -64,7 +68,7 @@ fun GlassSystemNavbar(
     blur: Float = 3f,
     fallbackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     overlayColor: Color = Color.Transparent,
-    content: @Composable () -> Unit,
+    content: @Composable (bottomPadding: PaddingValues) -> Unit,
 ) {
     GlassBottomSpace(
         modifier = modifier,
@@ -72,8 +76,8 @@ fun GlassSystemNavbar(
         fallbackColor = fallbackColor,
         overlayColor = overlayColor,
         bottomContent = { SystemNavbarSpacer() }
-    ) {
-        content()
+    ) { padding ->
+        content(padding)
     }
 }
 
@@ -87,20 +91,20 @@ fun GlassBottomSpace(
     fallbackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     overlayColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f),
     bottomContent: @Composable () -> Unit,
-    globalContent: @Composable () -> Unit,
+    globalContent: @Composable (bottomPadding: PaddingValues) -> Unit,
 ) {
     Box(modifier = modifier) {
         val context = LocalContext.current
-        val navbarHeightPx = remember { mutableStateOf(height?.value?.let(context::dpToPx)?.toFloat()) }
+        var navbarHeightPx by remember { mutableStateOf(height?.value?.let(context::dpToPx)?.toFloat()) }
         val isRenderEffectSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .letIf(isRenderEffectSupported && navbarHeightPx.value != null) {
-                    it.glassBottom(heightPx = navbarHeightPx.value!!)
+                .letIf(isRenderEffectSupported && navbarHeightPx != null) {
+                    it.glassBottom(heightPx = navbarHeightPx!!)
                 }
         ) {
-            globalContent()
+            globalContent(PaddingValues(bottom = navbarHeightPx?.dp ?: 0.dp))
         }
         Box(
             modifier = Modifier
@@ -109,7 +113,7 @@ fun GlassBottomSpace(
                 .let {
                     if (height == null) {
                         it.onGloballyPositioned {
-                            navbarHeightPx.value = it.size.height.toFloat()
+                            navbarHeightPx = it.size.height.toFloat()
                         }
                     } else {
                         it.height(height)
@@ -124,7 +128,9 @@ fun GlassBottomSpace(
                 }
                 .align(Alignment.BottomCenter)
         ) {
-            bottomContent()
+            Column {
+                bottomContent()
+            }
 
             Box(
                 Modifier

@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import f.cking.software.R
 import f.cking.software.TheAppConfig
 import f.cking.software.data.helpers.LocationProvider
+import f.cking.software.data.helpers.PermissionHelper
 import f.cking.software.domain.model.LocationModel
 import f.cking.software.ui.devicedetails.MapConfig
 import f.cking.software.ui.map.MapView
@@ -49,7 +50,7 @@ import f.cking.software.utils.graphic.SystemNavbarSpacer
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.getKoin
+import org.koin.compose.getKoin
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 
@@ -211,6 +212,7 @@ object SelectLocationScreen {
         onMapReady: (mapView: MapView) -> Unit
     ) {
         val locationProvider = getKoin().get<LocationProvider>()
+        val permissionHelper = getKoin().get<PermissionHelper>()
         val scope = rememberCoroutineScope()
 
         MapView(modifier = modifier) { mapView ->
@@ -223,14 +225,18 @@ object SelectLocationScreen {
                 mapView.controller.setZoom(MapConfig.DEFAULT_MAP_ZOOM)
             } else {
                 scope.launch {
-                    locationProvider.fetchOnce()
-                    locationProvider.observeLocation()
-                        .filterNotNull()
-                        .take(1)
-                        .collect { location ->
-                            mapView.controller.setZoom(MapConfig.DEFAULT_MAP_ZOOM)
-                            mapView.controller.setCenter(GeoPoint(location.location))
-                        }
+                    if (permissionHelper.checkLocationPermission()) {
+                        locationProvider.observeLocation()
+                            .filterNotNull()
+                            .take(1)
+                            .collect { location ->
+                                mapView.controller.setZoom(MapConfig.DEFAULT_MAP_ZOOM)
+                                mapView.controller.setCenter(GeoPoint(location.location))
+                            }
+                        locationProvider.fetchOnce()
+                    } else {
+                        mapView.controller.setZoom(MapConfig.MIN_MAP_ZOOM)
+                    }
                 }
             }
         }

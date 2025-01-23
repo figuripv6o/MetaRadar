@@ -1,5 +1,6 @@
 package f.cking.software.ui
 
+import f.cking.software.ui.backgroundlocationrequest.BackgroundLocationRequestViewModel
 import f.cking.software.ui.devicedetails.DeviceDetailsViewModel
 import f.cking.software.ui.devicelist.DeviceListViewModel
 import f.cking.software.ui.journal.JournalViewModel
@@ -20,7 +21,7 @@ object UiModule {
         single { RouterImpl() }
         single<Router> { get<RouterImpl>() }
         viewModel { MainViewModel(get(), get(), get(), get(), get(), get()) }
-        viewModel { DeviceListViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+        viewModel { DeviceListViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
         viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
         viewModel { ProfilesListViewModel(get(), get()) }
         viewModel { ProfileDetailsViewModel(profileId = it[0], template = it[1], get(), get(), get(), get(), get()) }
@@ -29,5 +30,6 @@ object UiModule {
         viewModel { DeviceDetailsViewModel(address = it[0], get(), get(), get(), get(), get(), get(), get(), get()) }
         viewModel { JournalViewModel(get(), get(), get(), get(), get()) }
         viewModel { MapViewModel(get(), get(), get()) }
+        viewModel { BackgroundLocationRequestViewModel(get(), get()) }
     }
 }

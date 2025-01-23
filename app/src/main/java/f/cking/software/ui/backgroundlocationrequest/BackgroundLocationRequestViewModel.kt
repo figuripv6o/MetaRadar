@@ -20,8 +20,10 @@ class BackgroundLocationRequestViewModel(
     }
 
     fun grantPermission() {
-        permissionHelper.checkBlePermissions(permissions = PermissionHelper.BACKGROUND_LOCATION) {
-            onBack()
+        permissionHelper.checkBlePermissions {
+            permissionHelper.checkBlePermissions(permissions = PermissionHelper.BACKGROUND_LOCATION) {
+                onBack()
+            }
         }
     }
 

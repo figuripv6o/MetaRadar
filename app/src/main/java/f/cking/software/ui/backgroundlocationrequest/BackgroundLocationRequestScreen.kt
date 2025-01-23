@@ -2,6 +2,7 @@ package f.cking.software.ui.backgroundlocationrequest
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import f.cking.software.R
 import f.cking.software.utils.graphic.GlassBottomSpace
 import f.cking.software.utils.graphic.RoundedBox
+import f.cking.software.utils.graphic.SystemNavbarSpacer
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,15 +41,18 @@ object BackgroundLocationRequestScreen {
             content = { paddings ->
                 GlassBottomSpace(
                     modifier = Modifier.fillMaxSize(),
-                    globalContent = {
-                        Content(Modifier.padding(top = paddings.calculateTopPadding()), viewModel)
+                    globalContent = { bottomPadding ->
+                        Content(Modifier.padding(top = paddings.calculateTopPadding(), bottom = bottomPadding.calculateBottomPadding()), viewModel)
                     },
                     bottomContent = {
                         Button(
-                            modifier = Modifier.padding(8.dp).fillMaxSize(),
+                            modifier = Modifier.padding(8.dp).fillMaxWidth(),
                             onClick = { viewModel.grantPermission() },
-                            content = { Text(stringResource(R.string.background_location_request_button)) }
+                            content = {
+                                Text(stringResource(R.string.background_location_request_button), color = MaterialTheme.colorScheme.onPrimary)
+                            }
                         )
+                        SystemNavbarSpacer()
                     }
                 )
             }
@@ -58,7 +63,7 @@ object BackgroundLocationRequestScreen {
     private fun Content(modifier: Modifier, viewModel: BackgroundLocationRequestViewModel) {
         Column(modifier.fillMaxSize()) {
             RoundedBox {
-                Text(stringResource(R.string.background_location_request_title))
+                Text(stringResource(R.string.background_location_request_content))
             }
         }
     }
@@ -70,7 +75,7 @@ object BackgroundLocationRequestScreen {
             colors = TopAppBarDefaults.topAppBarColors(
                 scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             ),
-            title = { Text(text = stringResource(R.string.shader_test_title)) },
+            title = { Text(text = stringResource(R.string.background_location_request_title)) },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
