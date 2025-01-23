@@ -4,6 +4,7 @@ import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.LocationModel
 import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
+import f.cking.software.ui.backgroundlocationrequest.BackgroundLocationRequestScreen
 import f.cking.software.ui.devicedetails.DeviceDetailsScreen
 import f.cking.software.ui.filter.FilterUiState
 import f.cking.software.ui.filter.SelectFilterScreen
@@ -52,7 +53,7 @@ object ScreenNavigationCommands {
     })
 
     object OpenBackgroundLocationScreen : AddToStackCommand(screenFunction = { key, router ->
-        // TODO()
+        BackgroundLocationRequestScreen.Screen()
     })
 
     class OpenSelectLocationScreen(

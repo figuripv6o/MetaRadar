@@ -51,7 +51,7 @@ class PermissionHelper(
         }
     }
 
-    fun onPermissionGranted(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    fun onPermissionResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         val allPermissionsGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
         val requestTime = permissionRequestTime
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
