@@ -57,7 +57,7 @@
     <string name="settings_backup_database">Создать резервную копию Базы Данных</string>
     <string name="settings_clear_all_location_history">Очистить историю перемещений</string>
     <string name="settings_use_gps_title">Использовать только GPS устройства</string>
-    <string name="settings_use_gps_subtitle">Не использовать Android Fused Location. Без эвристической хуйни, старый добрый GPS. Более высокая достоверность данных, выше энергопотребление.</string>
+    <string name="settings_use_gps_subtitle">Fused Location Provider использует спекулятивное определение геолокации, что улучшает работу при плохом сигнале GPS, но снижает достоверность геолокации. Отключение Fused Location увеличивает достоверность данных, но ухудшает энергопотребление.</string>
     <string name="settings_location_history_was_removed">История геолокаций безвозвратно удалена.</string>
     <string name="backup_has_failed">Не удалось создать резервную копию. Отчет об ошибке записан в Журнал</string>
     <string name="directory_was_not_selected">Директория не выбрана</string>

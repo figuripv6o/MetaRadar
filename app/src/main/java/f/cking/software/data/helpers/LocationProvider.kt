@@ -85,8 +85,8 @@ class LocationProvider(
     }
 
     fun isLocationAvailable(): Boolean {
-        return (locationManager?.isProviderEnabled(provider()) ?: false)
-                && (locationManager?.isLocationEnabled ?: false)
+        return (locationManager?.isProviderEnabled(provider()) == true)
+                && locationManager.isLocationEnabled
     }
 
     fun isActive(): Boolean {
