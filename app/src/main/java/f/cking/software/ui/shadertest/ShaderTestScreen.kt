@@ -34,8 +34,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -52,6 +55,7 @@ import f.cking.software.letIf
 import f.cking.software.utils.graphic.GlassSystemNavbar
 import f.cking.software.utils.graphic.glass.GlassShader
 import f.cking.software.utils.graphic.glass.RefractionMaterial
+import f.cking.software.utils.graphic.glass.Tilt
 import f.cking.software.utils.graphic.glass.glassPanel
 import f.cking.software.utils.graphic.pxToDp
 import f.cking.software.utils.navigation.BackCommand
@@ -77,7 +81,9 @@ object ShaderTestScreen {
 
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
         Scaffold(
-            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = { AppBar(scrollBehavior) { router.navigate(BackCommand) } },
             content = { paddings ->
                 GlassSystemNavbar(
@@ -97,8 +103,9 @@ object ShaderTestScreen {
     ) {
 
         val scrollState = rememberScrollState()
-        val screenSize = remember { mutableStateOf(Size(0.0f, 0.0f)) }
-        val settingsBlockSize = remember { mutableStateOf(Size(0.0f, 0.0f)) }
+        var screenSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
+        var settingsBlockSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
+        var tilt: Tilt.Fixed by remember { mutableStateOf(Tilt.Fixed()) }
 
         val sliderSizeState = remember { SliderState(value = 0.5f) }
         val sliderAberrationState = remember { SliderState(value = 0.1f) }
@@ -111,30 +118,31 @@ object ShaderTestScreen {
             )
         }
 
-        val glassType = remember { mutableStateOf<GlassType>(GlassType.MOD) }
+        var glassType by remember { mutableStateOf<GlassType>(GlassType.MOD) }
 
-        val offset = max(0f, settingsBlockSize.value.height - scrollState.value)
+        val offset = max(0f, settingsBlockSize.height - scrollState.value)
 
-        val panelSize = Size(screenSize.value.width * sliderSizeState.value, screenSize.value.height * sliderSizeState.value)
-        val top = max((screenSize.value.height / 2 - panelSize.height / 2).toInt(), offset.toInt())
+        val panelSize = Size(screenSize.width * sliderSizeState.value, screenSize.height * sliderSizeState.value)
+        val top = max((screenSize.height / 2 - panelSize.height / 2).toInt(), offset.toInt())
         val rect = Rect(
-            (screenSize.value.width / 2 - panelSize.width / 2).toInt(),
+            (screenSize.width / 2 - panelSize.width / 2).toInt(),
             top,
-            (screenSize.value.width / 2 + panelSize.width / 2).toInt(),
+            (screenSize.width / 2 + panelSize.width / 2).toInt(),
             (top + panelSize.height).toInt(),
         )
 
         Box(
             parentModifier.fillMaxSize()
                 .onSizeChanged {
-                    screenSize.value = Size(it.width.toFloat(), it.height.toFloat())
+                    screenSize = Size(it.width.toFloat(), it.height.toFloat())
                 }
                 .letIf(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     it.glassPanel(
                         rect = rect,
                         refractionIndex = sliderRefractionIndexState.value,
                         aberrationIndex = sliderAberrationState.value,
-                        curveType = glassType.value.curveType(sliderAmplitudeState.value, sliderLengthState.value),
+                        curveType = glassType.curveType(sliderAmplitudeState.value, sliderLengthState.value),
+                        tilt = Tilt.Motion,
                     )
                 }
         ) {
@@ -145,8 +153,9 @@ object ShaderTestScreen {
             ) {
 
                 Column(
-                    modifier = Modifier.fillMaxWidth()
-                        .onSizeChanged { settingsBlockSize.value = Size(it.width.toFloat(), it.height.toFloat()) }
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onSizeChanged { settingsBlockSize = Size(it.width.toFloat(), it.height.toFloat()) }
                 ) {
                     // Scale
                     Slider(
@@ -175,7 +184,7 @@ object ShaderTestScreen {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Absolute.SpaceAround) {
                         GlassType.entries.forEach { type ->
                             FilterChip(
-                                onClick = { glassType.value = type },
+                                onClick = { glassType = type },
                                 trailingIcon = type.imageRes?.let {
                                     {
                                         Icon(
@@ -186,13 +195,13 @@ object ShaderTestScreen {
                                         )
                                     }
                                 },
-                                selected = glassType.value == type,
+                                selected = glassType == type,
                                 label = { Text(stringResource(type.nameRes)) },
                             )
                         }
                     }
 
-                    AnimatedVisibility(glassType.value.curveSupport) {
+                    AnimatedVisibility(glassType.curveSupport) {
                         Column(modifier = Modifier.fillMaxWidth()) {
 
                             // Curve amplitude
@@ -227,18 +236,33 @@ object ShaderTestScreen {
             }
 
             Box(
-                Modifier.size(
-                    height = pxToDp(rect.height().toFloat()).dp,
-                    width = pxToDp(rect.width().toFloat()).dp
-                ).offset(
-                    x = pxToDp(rect.left.toFloat()).dp,
-                    y = pxToDp(rect.top.toFloat()).dp,
-                ).background(Color.Gray.copy(alpha = 0.1f))
+                Modifier
+                    .size(
+                        height = pxToDp(rect.height().toFloat()).dp,
+                        width = pxToDp(rect.width().toFloat()).dp
+                    )
+                    .offset(
+                        x = pxToDp(rect.left.toFloat()).dp,
+                        y = pxToDp(rect.top.toFloat()).dp,
+                    )
+                    .background(Color.Gray.copy(alpha = 0.1f))
+            )
+
+            Text(
+                modifier = Modifier.align(Alignment.BottomStart).padding(32.dp),
+                color = MaterialTheme.colorScheme.onSurface,
+                text = stringResource(R.string.shader_test_tilt, tilt.x, tilt.y),
             )
         }
     }
 
-    private enum class GlassType(val curveType: (A: Float, k: Float) -> GlassShader.CurveType, val nameRes: Int, val imageRes: Int?, val curveSupport: Boolean) {
+
+    private enum class GlassType(
+        val curveType: (A: Float, k: Float) -> GlassShader.CurveType,
+        val nameRes: Int,
+        val imageRes: Int?,
+        val curveSupport: Boolean
+    ) {
         MOD({ A, k -> GlassShader.CurveType.Mod(A, k) }, R.string.shader_test_glass_type_mod, R.drawable.glass_type_fluted, curveSupport = true),
         SIN({ A, k -> GlassShader.CurveType.Sin(A, k) }, R.string.shader_test_glass_type_sin, R.drawable.glass_type_curved, curveSupport = true),
         FLAT({ _, _ -> GlassShader.CurveType.Flat }, R.string.shader_test_glass_type_flat, null, curveSupport = false),
@@ -251,7 +275,9 @@ object ShaderTestScreen {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             fontWeight = FontWeight.SemiBold
         )
-        Slider(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), state = state)
+        Slider(modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp), state = state)
     }
 
     @Composable
@@ -261,9 +287,7 @@ object ShaderTestScreen {
             colors = TopAppBarDefaults.topAppBarColors(
                 scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             ),
-            title = {
-                Text(text = stringResource(R.string.shader_test_title))
-            },
+            title = { Text(text = stringResource(R.string.shader_test_title)) },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))

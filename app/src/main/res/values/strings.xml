@@ -297,4 +297,5 @@
     <string name="shader_test_glass_type_flat">Flat</string>
     <string name="shader_test_curve_amplitude">Curve amplitude: %.2f</string>
     <string name="shader_test_curve_length">Curve length: %.2f</string>
+    <string name="shader_test_tilt">x: %.2f\ny: %.2f</string>
 </resources>

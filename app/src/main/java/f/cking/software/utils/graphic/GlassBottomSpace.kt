@@ -34,6 +34,7 @@ import f.cking.software.dpToPx
 import f.cking.software.letIf
 import f.cking.software.utils.graphic.glass.GlassShader
 import f.cking.software.utils.graphic.glass.RefractionMaterial
+import f.cking.software.utils.graphic.glass.Tilt
 import f.cking.software.utils.graphic.glass.glassPanel
 import kotlin.math.max
 
@@ -161,6 +162,7 @@ fun Modifier.glassBottom(
                 curveType = curveType,
                 elevationPx = elevationPx,
                 material = RefractionMaterial.GLASS,
+                tilt = Tilt.Motion(0.03f, 0.01f),
             )
         )
 }

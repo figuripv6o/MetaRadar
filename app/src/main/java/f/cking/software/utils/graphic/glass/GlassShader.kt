@@ -18,6 +18,7 @@ object GlassShader {
     const val ARG_CURVE_PARAM_A = "curveParamA"
     const val ARG_CURVE_PARAM_K = "curveParamK"
     const val ARG_ABERRATION_INDEX = "aberrationIndex"
+    const val ARG_TILT = "tilt"
 
 
     sealed interface CurveType {
@@ -60,6 +61,7 @@ object GlassShader {
         uniform float $ARG_CURVE_PARAM_A;
         uniform float $ARG_CURVE_PARAM_K;
         uniform float $ARG_ABERRATION_INDEX;
+        uniform float2 $ARG_TILT;
         
         float curveSin(float2 fCoord, float A, float k) {
             return A * sin(k * fCoord.x);
@@ -105,7 +107,10 @@ object GlassShader {
         }
         
         bool isInsidePanel(float2 fCoord) {
-            return fCoord.x >= $ARG_PANEL_X && fCoord.x < $ARG_PANEL_X + $ARG_PANEL_WIDTH && fCoord.y > $ARG_PANEL_Y && fCoord.y < $ARG_PANEL_Y + $ARG_PANEL_HEIGHT;
+            return fCoord.x >= $ARG_PANEL_X 
+                && fCoord.x < $ARG_PANEL_X + $ARG_PANEL_WIDTH 
+                && fCoord.y > $ARG_PANEL_Y 
+                && fCoord.y < $ARG_PANEL_Y + $ARG_PANEL_HEIGHT;
         }
         
         float4 main(float2 fragCoord) {
@@ -118,7 +123,7 @@ object GlassShader {
         
             float2 eyeVector = (uv * 2.0) - 1.0;
             float depth = curve(fragCoord, $ARG_CURVE_PARAM_A, $ARG_CURVE_PARAM_K) * ($ARG_CURVE_PARAM_A / 2.0);
-            float3 incident = float3(eyeVector.x * 0.02, -eyeVector.y * 0.001 + depth * 0.2, -1.0);
+            float3 incident = float3(eyeVector.x * 0.02 + $ARG_TILT.x, -eyeVector.y * 0.001 + depth * 0.2 + $ARG_TILT.y, -1.0);
             float3 normal = calculateNormal(fragCoord);
             float ior = 1.0/$ARG_REFRACTION_INDEX;
             
