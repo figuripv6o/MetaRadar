@@ -46,6 +46,7 @@ object BackgroundLocationRequestScreen {
                     },
                     bottomContent = {
                         Button(
+                            enabled = viewModel.grantButtonEnabled,
                             modifier = Modifier.padding(8.dp).fillMaxWidth(),
                             onClick = { viewModel.grantPermission() },
                             content = {
