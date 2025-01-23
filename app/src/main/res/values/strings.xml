@@ -269,8 +269,9 @@
     <string name="bluetooth_is_not_available_content">It looks like Bluetooth is turned off or not available on your device. Turn on Bluetooth to continue</string>
     <string name="background_location_is_restricted">Background location permission is not granted</string>
     <string name="background_location_restricted_title">Background positioning is limited</string>
-    <string name="background_location_restricted_content">All-time location permission is required to scan BLE when the app in background due to Android limitations.</string>
+    <string name="background_location_restricted_content">All-time location permission is needed to scan BLE in the background due to Android restrictions.</string>
     <string name="background_location_restricted_button">Read more</string>
+    <string name="background_location_hide_button">Hide it</string>
 
     <!-- Journal -->
     <string name="journal_device_was_removed">Such device was removed from the database</string>

@@ -27,11 +27,12 @@ import f.cking.software.ui.ScreenNavigationCommands
 import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 class DeviceListViewModel(
     private val context: Application,
@@ -61,8 +62,10 @@ class DeviceListViewModel(
         )
     )
     var enjoyTheAppState: EnjoyTheAppState by mutableStateOf(EnjoyTheAppState.None)
-    val showBackgroundPermissionWarning: Boolean by permissionHelper.observeBackgroundLocationPermission()
-        .map { !it }
+    val showBackgroundPermissionWarning: Boolean by combine(
+        permissionHelper.observeBackgroundLocationPermission(),
+        settingsRepository.observeHideBackgroundLocationWarning(),
+    ) { permissionGranted, hideWarningTime -> !permissionGranted && checkBackgroundWarningIsExpired(hideWarningTime) }
         .collectAsState(viewModelScope, false)
 
     private var scannerObservingJob: Job? = null
@@ -159,11 +162,19 @@ class DeviceListViewModel(
         router.navigate(ScreenNavigationCommands.OpenBackgroundLocationScreen)
     }
 
+    fun onHideBackgroundLocationWarningClick() {
+        settingsRepository.setHideBackgroundLocationWarning(System.currentTimeMillis())
+    }
+
     fun onScrollEnd() {
         if (isPaginationEnabled && !isLoading) {
             currentPage++
             loadNextPage()
         }
+    }
+
+    private fun checkBackgroundWarningIsExpired(hideMessageTime: Long): Boolean {
+        return System.currentTimeMillis() - hideMessageTime > TimeUnit.DAYS.toMillis(3)
     }
 
     fun applyCurrentBatchSortingStrategy(strategy: CurrentBatchSortingStrategy) {

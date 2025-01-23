@@ -376,8 +376,20 @@ object DeviceListScreen {
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Button(modifier = Modifier.fillMaxWidth(), onClick = viewModel::onBackgraundLocationWarningClick) {
-                Text(text = stringResource(R.string.background_location_restricted_button), color = MaterialTheme.colorScheme.onPrimary)
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(modifier = Modifier.weight(1f), onClick = viewModel::onBackgraundLocationWarningClick) {
+                    Text(text = stringResource(R.string.background_location_restricted_button), color = MaterialTheme.colorScheme.onPrimary)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    modifier = Modifier.weight(1f), onClick = viewModel::onHideBackgroundLocationWarningClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Text(text = stringResource(R.string.background_location_hide_button), color = MaterialTheme.colorScheme.onSurface)
+                }
             }
         }
     }
