@@ -136,19 +136,19 @@ object ShaderTestScreen {
                 .onSizeChanged {
                     screenSize = Size(it.width.toFloat(), it.height.toFloat())
                 }
-                .letIf(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    it.glassPanel(
-                        rect = rect,
-                        refractionIndex = sliderRefractionIndexState.value,
-                        aberrationIndex = sliderAberrationState.value,
-                        curveType = glassType.curveType(sliderAmplitudeState.value, sliderLengthState.value),
-                        tilt = Tilt.Motion,
-                    )
-                }
         ) {
             Column(
                 Modifier
                     .fillMaxWidth()
+                    .letIf(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        it.glassPanel(
+                            rect = rect,
+                            refractionIndex = sliderRefractionIndexState.value,
+                            aberrationIndex = sliderAberrationState.value,
+                            curveType = glassType.curveType(sliderAmplitudeState.value, sliderLengthState.value),
+                            tilt = glassType.motion,
+                        )
+                    }
                     .verticalScroll(scrollState)
             ) {
 
@@ -261,7 +261,8 @@ object ShaderTestScreen {
         val curveType: (A: Float, k: Float) -> GlassShader.CurveType,
         val nameRes: Int,
         val imageRes: Int?,
-        val curveSupport: Boolean
+        val curveSupport: Boolean,
+        val motion: Tilt.Motion = Tilt.Motion,
     ) {
         MOD({ A, k -> GlassShader.CurveType.Mod(A, k) }, R.string.shader_test_glass_type_mod, R.drawable.glass_type_fluted, curveSupport = true),
         SIN({ A, k -> GlassShader.CurveType.Sin(A, k) }, R.string.shader_test_glass_type_sin, R.drawable.glass_type_curved, curveSupport = true),

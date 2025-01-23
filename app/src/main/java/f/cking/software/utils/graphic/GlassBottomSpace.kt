@@ -162,7 +162,7 @@ fun Modifier.glassBottom(
                 curveType = curveType,
                 elevationPx = elevationPx,
                 material = RefractionMaterial.GLASS,
-                tilt = Tilt.Motion(0.03f, 0.01f),
+                tilt = Tilt.Motion(0.04f, 0.015f),
             )
         )
 }
