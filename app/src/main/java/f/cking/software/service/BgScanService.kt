@@ -154,17 +154,24 @@ class BgScanService : Service() {
 
     private fun handleScanResult(batch: List<BleScanDevice>) {
         scope.launch {
-            val notificationContent: NotificationsHelper.ServiceNotificationContent = when {
-                batch.isEmpty() && !locationProvider.isLocationAvailable() -> handleLocationDisabled()
-                batch.isEmpty() && !bleScannerHelper.isBluetoothEnabled() -> handleBleIsTurnedOffError()
-                batch.isEmpty() && permissionHelper.checkBackgroundLocationPermition() -> handleBackgroundLocationRestricted()
-                batch.isNotEmpty() -> handleNonEmptyBatch(batch)
-                else -> NotificationsHelper.ServiceNotificationContent.NoDataYet
+            val notificationContent: NotificationsHelper.ServiceNotificationContent = if (batch.isNotEmpty()){
+                handleNonEmptyBatch(batch)
+            } else {
+                handleEmptyBatch()
             }
 
             notificationsHelper.updateNotification(notificationContent, createCloseServiceIntent(this@BgScanService))
 
             scheduleNextScan()
+        }
+    }
+
+    private fun handleEmptyBatch(): NotificationsHelper.ServiceNotificationContent {
+        return when {
+            !locationProvider.isLocationAvailable() -> handleLocationDisabled()
+            !bleScannerHelper.isBluetoothEnabled() -> handleBleIsTurnedOffError()
+            permissionHelper.checkBackgroundLocationPermition() -> handleBackgroundLocationRestricted()
+            else -> NotificationsHelper.ServiceNotificationContent.NoDataYet
         }
     }
 
