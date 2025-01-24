@@ -181,7 +181,7 @@ class BgScanService : Service() {
             reportError(IllegalStateException("Can't scan BLE without background location permission due to Android restrictions."))
             backgroundLocationRestrictedWasReported = true
         }
-        return NotificationsHelper.ServiceNotificationContent.LocationIsTurnedOff
+        return NotificationsHelper.ServiceNotificationContent.BackgroundLocationIsRestricted
     }
 
     private fun handleLocationDisabled(): NotificationsHelper.ServiceNotificationContent {

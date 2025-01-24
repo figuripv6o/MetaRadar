@@ -11,7 +11,7 @@ class SettingsRepository(
 ) {
 
     private val silentModeState = MutableStateFlow(getSilentMode())
-    private val hideBackgroundLocationWarning = MutableStateFlow(0L)
+    private val hideBackgroundLocationWarning = MutableStateFlow(getHideBackgroundLocationWarning())
 
     fun setGarbagingTime(time: Long) {
         sharedPreferences.edit().putLong(KEY_GARBAGING_TIME, time).apply()
