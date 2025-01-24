@@ -32,12 +32,12 @@ class DataModule(
         single { DevicesRepository(get()) }
         single { PermissionHelper(get(), get(), get()) }
         single { ActivityProvider() }
-        single { IntentHelper(get()) }
+        single { IntentHelper(get(), get()) }
         single { RadarProfilesRepository(get()) }
         single { LocationProvider(get(), get(), get(), get()) }
         single { LocationRepository(get()) }
         single { JournalRepository(get()) }
-        single { NotificationsHelper(get(), get()) }
+        single { NotificationsHelper(get(), get(), get()) }
         single { PowerModeHelper(get()) }
         single { TagsRepository(get()) }
     }

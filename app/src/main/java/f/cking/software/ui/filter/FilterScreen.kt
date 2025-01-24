@@ -262,7 +262,7 @@ object FilterScreen {
                     placeholder = { Text(text = "00:00:00:00:00:00") },
                     keyboardOptions = KeyboardOptions.Default.copy(
                         capitalization = KeyboardCapitalization.Characters,
-                        autoCorrect = false,
+                        autoCorrectEnabled = false,
                     ),
                 )
                 Spacer(modifier = Modifier.width(4.dp))

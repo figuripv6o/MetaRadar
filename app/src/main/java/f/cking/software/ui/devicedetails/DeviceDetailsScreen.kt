@@ -106,13 +106,13 @@ object DeviceDetailsScreen {
             topBar = {
                 AppBar(viewModel = viewModel, scrollBehavior)
             },
-            content = {
+            content = { padding ->
                 GlassSystemNavbar(modifier = Modifier.fillMaxSize()) {
                     Content(
                         modifier = Modifier
                             .background(MaterialTheme.colorScheme.surface)
                             .fillMaxSize()
-                            .padding(top = it.calculateTopPadding()),
+                            .padding(top = padding.calculateTopPadding()),
                         viewModel = viewModel,
                     )
                 }

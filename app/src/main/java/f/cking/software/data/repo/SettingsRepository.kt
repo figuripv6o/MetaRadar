@@ -11,6 +11,7 @@ class SettingsRepository(
 ) {
 
     private val silentModeState = MutableStateFlow(getSilentMode())
+    private val hideBackgroundLocationWarning = MutableStateFlow(getHideBackgroundLocationWarning())
 
     fun setGarbagingTime(time: Long) {
         sharedPreferences.edit().putLong(KEY_GARBAGING_TIME, time).apply()
@@ -60,6 +61,19 @@ class SettingsRepository(
         sharedPreferences.edit().putBoolean(KEY_ENJOY_THE_APP_ANSWERED, value).apply()
     }
 
+    fun setHideBackgroundLocationWarning(value: Long) {
+        sharedPreferences.edit().putLong(KEY_HIDE_BACKGROUND_LOCATION_WARNING, value).apply()
+        hideBackgroundLocationWarning.tryEmit(value)
+    }
+
+    fun getHideBackgroundLocationWarning(): Long {
+        return sharedPreferences.getLong(KEY_HIDE_BACKGROUND_LOCATION_WARNING, 0L)
+    }
+
+    fun observeHideBackgroundLocationWarning(): Flow<Long> {
+        return hideBackgroundLocationWarning
+    }
+
     fun getEnjoyTheAppStartingPoint(): Long {
         return sharedPreferences.getLong(KEY_ENJOY_THE_APP_STARTING_POINT, NO_ENJOY_THE_APP_STARTING_POINT)
     }
@@ -99,6 +113,7 @@ class SettingsRepository(
         private const val KEY_ENJOY_THE_APP_STARTING_POINT = "key_enjoy_the_app_starting_point"
         private const val KEY_SILENT_NETWORK_MODE = "silent_network_mode"
         private const val KEY_CURRENT_BATCH_SORTING_STRATEGY_ID = "key_current_batch_sorting_strategy_id"
+        private const val KEY_HIDE_BACKGROUND_LOCATION_WARNING = "key_hide_background_location_warning"
 
         const val NO_APP_LAUNCH_TIME = -1L
         const val NO_ENJOY_THE_APP_STARTING_POINT = -1L

@@ -11,7 +11,9 @@ import androidx.lifecycle.viewModelScope
 import f.cking.software.BuildConfig
 import f.cking.software.R
 import f.cking.software.checkRegexSafe
+import f.cking.software.collectAsState
 import f.cking.software.data.helpers.IntentHelper
+import f.cking.software.data.helpers.PermissionHelper
 import f.cking.software.data.repo.DevicesRepository
 import f.cking.software.data.repo.SettingsRepository
 import f.cking.software.domain.interactor.CheckNeedToShowEnjoyTheAppInteractor
@@ -25,15 +27,18 @@ import f.cking.software.ui.ScreenNavigationCommands
 import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 class DeviceListViewModel(
     private val context: Application,
     private val devicesRepository: DevicesRepository,
     private val filterCheckerImpl: FilterCheckerImpl,
+    private val permissionHelper: PermissionHelper,
     val router: Router,
     private val checkNeedToShowEnjoyTheAppInteractor: CheckNeedToShowEnjoyTheAppInteractor,
     private val enjoyTheAppAskLaterInteractor: EnjoyTheAppAskLaterInteractor,
@@ -57,6 +62,11 @@ class DeviceListViewModel(
         )
     )
     var enjoyTheAppState: EnjoyTheAppState by mutableStateOf(EnjoyTheAppState.None)
+    val showBackgroundPermissionWarning: Boolean by combine(
+        permissionHelper.observeBackgroundLocationPermission(),
+        settingsRepository.observeHideBackgroundLocationWarning(),
+    ) { permissionGranted, hideWarningTime -> !permissionGranted && checkBackgroundWarningIsExpired(hideWarningTime) }
+        .collectAsState(viewModelScope, false)
 
     private var scannerObservingJob: Job? = null
     private var lastBatchJob: Job? = null
@@ -148,11 +158,23 @@ class DeviceListViewModel(
         }
     }
 
+    fun onBackgraundLocationWarningClick() {
+        router.navigate(ScreenNavigationCommands.OpenBackgroundLocationScreen)
+    }
+
+    fun onHideBackgroundLocationWarningClick() {
+        settingsRepository.setHideBackgroundLocationWarning(System.currentTimeMillis())
+    }
+
     fun onScrollEnd() {
         if (isPaginationEnabled && !isLoading) {
             currentPage++
             loadNextPage()
         }
+    }
+
+    private fun checkBackgroundWarningIsExpired(hideMessageTime: Long): Boolean {
+        return System.currentTimeMillis() - hideMessageTime > TimeUnit.DAYS.toMillis(3)
     }
 
     fun applyCurrentBatchSortingStrategy(strategy: CurrentBatchSortingStrategy) {

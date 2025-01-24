@@ -50,6 +50,7 @@ class BgScanService : Service() {
     private var failureScanCounter: AtomicInteger = AtomicInteger(0)
     private var locationDisabledWasReported: Boolean = false
     private var bluetoothDisabledWasReported: Boolean = false
+    private var backgroundLocationRestrictedWasReported: Boolean = false
     private val nextScanRunnable = Runnable {
         scan()
     }
@@ -153,11 +154,10 @@ class BgScanService : Service() {
 
     private fun handleScanResult(batch: List<BleScanDevice>) {
         scope.launch {
-            val notificationContent: NotificationsHelper.ServiceNotificationContent = when {
-                batch.isEmpty() && !locationProvider.isLocationAvailable() && !locationDisabledWasReported -> handleLocationDisabled()
-                batch.isEmpty() && !bleScannerHelper.isBluetoothEnabled() -> handleBleIsTurnedOffError()
-                batch.isNotEmpty() -> handleNonEmptyBatch(batch)
-                else -> NotificationsHelper.ServiceNotificationContent.NoDataYet
+            val notificationContent: NotificationsHelper.ServiceNotificationContent = if (batch.isNotEmpty()){
+                handleNonEmptyBatch(batch)
+            } else {
+                handleEmptyBatch()
             }
 
             notificationsHelper.updateNotification(notificationContent, createCloseServiceIntent(this@BgScanService))
@@ -166,10 +166,30 @@ class BgScanService : Service() {
         }
     }
 
+    private fun handleEmptyBatch(): NotificationsHelper.ServiceNotificationContent {
+        return when {
+            !locationProvider.isLocationAvailable() -> handleLocationDisabled()
+            !bleScannerHelper.isBluetoothEnabled() -> handleBleIsTurnedOffError()
+            permissionHelper.checkBackgroundLocationPermition() -> handleBackgroundLocationRestricted()
+            else -> NotificationsHelper.ServiceNotificationContent.NoDataYet
+        }
+    }
+
+    private fun handleBackgroundLocationRestricted(): NotificationsHelper.ServiceNotificationContent {
+        if (!backgroundLocationRestrictedWasReported) {
+            notificationsHelper.notifyBackgroundLocationIsRestricted()
+            reportError(IllegalStateException("Can't scan BLE without background location permission due to Android restrictions."))
+            backgroundLocationRestrictedWasReported = true
+        }
+        return NotificationsHelper.ServiceNotificationContent.BackgroundLocationIsRestricted
+    }
+
     private fun handleLocationDisabled(): NotificationsHelper.ServiceNotificationContent {
-        notificationsHelper.notifyLocationIsTurnedOff()
-        reportError(IllegalStateException("The BLE scanner did not return anything. This may happen if geolocation is turned off at the system level. Location access is required to work with BLE on Android."))
-        locationDisabledWasReported = true
+        if (!locationDisabledWasReported) {
+            notificationsHelper.notifyLocationIsTurnedOff()
+            reportError(IllegalStateException("The BLE scanner did not return anything. This may happen if geolocation is turned off at the system level. Location access is required to work with BLE on Android."))
+            locationDisabledWasReported = true
+        }
         return NotificationsHelper.ServiceNotificationContent.LocationIsTurnedOff
     }
 

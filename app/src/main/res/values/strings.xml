@@ -14,6 +14,7 @@
     <string name="ok">OK</string>
     <string name="turn_on">Turn on</string>
     <string name="report">Report</string>
+    <string name="shaders_test">Shaders test</string>
 
     <plurals name="day">
         <item quantity="zero">%d days</item>
@@ -66,7 +67,7 @@
     <string name="settings_backup_database">Backup database</string>
     <string name="settings_clear_all_location_history">Clear locations history</string>
     <string name="settings_use_gps_title">Use GPS location only</string>
-    <string name="settings_use_gps_subtitle">Don\'t use Fused Location. No heuristic bullshit, good old GPS, the data is more true. Requires good GPS signal. Higher battery consumption.</string>
+    <string name="settings_use_gps_subtitle">The Fused Location Provider uses speculative geolocation, which improves performance in areas with poor GPS signal but reduces location accuracy. Disabling the Fused Location increases data accuracy but negatively impacts power efficiency.</string>
     <string name="settings_location_history_was_removed">Location history was removed</string>
     <string name="backup_has_failed">Backup has failed. See report in the Journal</string>
     <string name="directory_was_not_selected">Directory wasn\'t selected</string>
@@ -266,6 +267,11 @@
     <string name="errors_notifications">Errors notifications</string>
     <string name="bluetooth_is_not_available_title">Bluetooth is not available</string>
     <string name="bluetooth_is_not_available_content">It looks like Bluetooth is turned off or not available on your device. Turn on Bluetooth to continue</string>
+    <string name="background_location_is_restricted">Background location permission is not granted</string>
+    <string name="background_location_restricted_title">Background positioning is limited</string>
+    <string name="background_location_restricted_content">All-time location permission is needed to scan BLE in the background due to Android restrictions.</string>
+    <string name="background_location_restricted_button">Read more</string>
+    <string name="background_location_hide_button">Hide it</string>
 
     <!-- Journal -->
     <string name="journal_device_was_removed">Such device was removed from the database</string>
@@ -275,7 +281,7 @@
     <string name="journal_placeholder">This is an event journal, the entire history of the radar will be displayed here so as not to lose anything.</string>
 
     <!-- Permissions -->
-    <string name="permission_intro_bg_location_text">There are two reasons for background location permission:\n- Part of the functionality is related to the analysis of data regarding the current location of the user.\n- To work correctly with Bluetooth in the background in android, location permission is also required, since the application.</string>
+    <string name="permission_intro_bg_location_text">There are two reasons for background location permission:\n- Part of the functionality is related to the analysis of data regarding the current location of the user.\n- To work correctly with Bluetooth in the background in android, location permission is also required.</string>
     <string name="permissions_intro_bg_location_title">Background Location</string>
     <string name="permissions_intro_nearby_title">Nearby (Bluetooth) access</string>
     <string name="permissions_intro_nearby_description">Bluetooth scanning requires permission for Nearby (Bluetooth) devices.</string>
@@ -284,4 +290,22 @@
     <string name="permission_data_coolect_info">The application does not collect or transmit data. The project is fully open source and available on github</string>
     <string name="grant_permissions_manually">Grant the necessary permissions manually</string>
     <string name="cannot_open_the_url">Cannot open the url</string>
+
+    <!-- Shader test -->
+    <string name="shader_test_title" translatable="false">Shaders test</string>
+    <string name="shader_test_panel_size">Glass scale: %d\%%</string>
+    <string name="shader_test_glass_aberration">Aberration index: %.2f</string>
+    <string name="shader_test_glass_refraction">Refraction index: %.2f</string>
+    <string name="shader_test_glass_type">Glass type</string>
+    <string name="shader_test_glass_type_sin">Curved</string>
+    <string name="shader_test_glass_type_mod">Fluted</string>
+    <string name="shader_test_glass_type_flat">Flat</string>
+    <string name="shader_test_curve_amplitude">Curve amplitude: %.2f</string>
+    <string name="shader_test_curve_length">Curve length: %.2f</string>
+    <string name="shader_test_tilt">x: %.2f\ny: %.2f</string>
+
+    <!-- Background location request dialog -->
+    <string name="background_location_request_title">Why all-time location is needed</string>
+    <string name="background_location_request_content">Our app uses Bluetooth Low Energy (BLE) to provide its core functionality. Due to Android’s policies, BLE access requires location permission because your location can be inferred from nearby BLE and WiFi signals.\n\nWhile the app works fine with location access only while you\'re using it, granting all-time location access ensures uninterrupted BLE scanning, even when the app is running in the background. Without this, the Android system may restrict or block BLE access, which could impact the app’s functionality.\n\nWe respect your privacy and only use location access for BLE scanning to make the app work seamlessly. The app does not transmit your data over the internet, and all information is securely stored locally on your device.</string>
+    <string name="background_location_request_button">Grant permission</string>
 </resources>

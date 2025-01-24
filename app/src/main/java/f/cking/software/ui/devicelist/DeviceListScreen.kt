@@ -131,11 +131,22 @@ object DeviceListScreen {
                 }
             }
 
+            item(contentType = ListContentType.BACKGROUND_PERMISSION_WARNING, key = "background_permission_warning") {
+                Spacer(modifier = Modifier.height(8.dp))
+                AnimatedVisibility(
+                    modifier = Modifier.animateItem(),
+                    visible = viewModel.showBackgroundPermissionWarning,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    BackgroundLocationWarning(viewModel)
+                }
+            }
+
             item(contentType = ListContentType.ENJOY_THE_APP, key = "enjoy_the_app") {
                 Spacer(modifier = Modifier.height(8.dp))
                 AnimatedVisibility(
-                    modifier = Modifier
-                        .animateItemPlacement(),
+                    modifier = Modifier.animateItem(),
                     visible = viewModel.enjoyTheAppState != DeviceListViewModel.EnjoyTheAppState.None,
                     enter = fadeIn(),
                     exit = fadeOut(),
@@ -146,8 +157,7 @@ object DeviceListScreen {
 
             item(contentType = ListContentType.CURRENT_BATCH, key = "current_batch") {
                 AnimatedVisibility(
-                    modifier = Modifier
-                        .animateItemPlacement(),
+                    modifier = Modifier.animateItem(),
                     visible = viewModel.currentBatchViewState != null,
                     enter = fadeIn(),
                     exit = fadeOut()
@@ -163,7 +173,7 @@ object DeviceListScreen {
             items(devices.size, key = { "device_${devices[it]}" }, contentType = { ListContentType.DEVICE}) { index ->
                 val deviceData = devices[index]
                     DeviceListItem(
-                        modifier = Modifier.animateItemPlacement(),
+                        modifier = Modifier.animateItem(),
                         device = deviceData,
                         onClick = { viewModel.onDeviceClick(deviceData) },
                         onTagSelected = { viewModel.onTagSelected(it) },
@@ -171,7 +181,7 @@ object DeviceListScreen {
 
                 val showDivider = viewModel.devicesViewState.getOrNull(index + 1)?.lastDetectTimeMs != deviceData.lastDetectTimeMs
                 if (showDivider) {
-                    Divider(Modifier.animateItemPlacement())
+                    Divider(Modifier.animateItem())
                 }
             }
 
@@ -194,7 +204,7 @@ object DeviceListScreen {
     }
 
     enum class ListContentType {
-        ENJOY_THE_APP, CURRENT_BATCH, DEVICE, PAGINATION_PROGRESS, BOTTOM_SPACER,
+        ENJOY_THE_APP, CURRENT_BATCH, DEVICE, PAGINATION_PROGRESS, BOTTOM_SPACER, BACKGROUND_PERMISSION_WARNING
     }
 
     @Composable
@@ -354,6 +364,33 @@ object DeviceListScreen {
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+        }
+    }
+
+    @Composable
+    private fun BackgroundLocationWarning(viewModel: DeviceListViewModel) {
+        RoundedBox(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(
+                text = stringResource(R.string.background_location_restricted_content),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(modifier = Modifier.weight(1f), onClick = viewModel::onBackgraundLocationWarningClick) {
+                    Text(text = stringResource(R.string.background_location_restricted_button), color = MaterialTheme.colorScheme.onPrimary)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    modifier = Modifier.weight(1f), onClick = viewModel::onHideBackgroundLocationWarningClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Text(text = stringResource(R.string.background_location_hide_button), color = MaterialTheme.colorScheme.onSurface)
+                }
+            }
         }
     }
 
