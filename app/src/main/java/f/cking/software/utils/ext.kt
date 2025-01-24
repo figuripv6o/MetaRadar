@@ -8,7 +8,15 @@ import android.util.TypedValue
 import android.view.Display
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
 import java.security.MessageDigest
 import java.time.Instant
@@ -18,6 +26,9 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.regex.PatternSyntaxException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 
 fun Long.getTimePeriodStr(context: Context): String {
@@ -106,6 +117,11 @@ fun Context.openUrl(url: String) {
 fun Context.dpToPx(value: Float): Int =
     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics).toInt()
 
+@Composable
+fun Float.toPx(): Int {
+    return LocalContext.current.dpToPx(this)
+}
+
 fun Context.pxToDp(value: Float): Float = value / resources.displayMetrics.density
 
 fun <T> List<T>.splitToBatches(batchSize: Int): List<List<T>> {
@@ -138,4 +154,29 @@ fun String.checkRegexSafe(pattern: String): Boolean {
          Timber.e("Unexpected regex failure", e)
         false
     }
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun <T> T.letIf(condition: () -> Boolean, block: (T) -> T): T {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    return if (condition.invoke()) block(this) else this
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun <T> T.letIf(condition: Boolean, block: (T) -> T): T {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    return if (condition) block(this) else this
+}
+
+fun <T> Flow<T>.collectAsState(scope: CoroutineScope, initialValue: T): State<T> {
+    val state = mutableStateOf(initialValue)
+
+    onEach { state.value = it }
+        .launchIn(scope)
+
+    return state
 }

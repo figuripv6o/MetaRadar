@@ -3,9 +3,11 @@ package f.cking.software.utils.graphic
 import org.intellij.lang.annotations.Language
 
 object Shaders {
+    const val ARG_CONTENT = "content"
+
     @Language("AGSL")
     val SHADER_CONTENT = """
-        uniform shader content;
+        uniform shader $ARG_CONTENT;
     
         uniform float blurredHeight;
         uniform float2 iResolution;
@@ -20,8 +22,8 @@ object Shaders {
 """
 
     @Language("AGSL")
-    val SHADER_BLURRED = """
-        uniform shader content;
+    val SHADER_EFFECT_AREA = """
+        uniform shader $ARG_CONTENT;
     
         uniform float blurredHeight;
         uniform float2 iResolution;
@@ -37,7 +39,7 @@ object Shaders {
 
     @Language("AGSL")
     val GLASS_SHADER = """
-        uniform shader content;
+        uniform shader $ARG_CONTENT;
         uniform float blurredHeight;
         uniform float2 iResolution;
         
@@ -137,10 +139,9 @@ object Shaders {
         }
     """
 
-
     @Language("AGSL")
     val WATER_DROP = """
-        uniform shader content;
+        uniform shader $ARG_CONTENT;
         uniform float factor;
         uniform float2 iResolution;
         uniform float2 dropPosition;

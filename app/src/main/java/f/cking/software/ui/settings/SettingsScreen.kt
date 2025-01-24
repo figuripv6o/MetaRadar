@@ -58,6 +58,10 @@ object SettingsScreen {
             Spacer(modifier = Modifier.height(8.dp))
             LocationBlock(viewModel = viewModel)
             Spacer(modifier = Modifier.height(8.dp))
+            if (BuildConfig.DEBUG) {
+                ShaderTestButton(viewModel = viewModel)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             AppInfo()
             SecretCatPhoto()
             FABSpacer()
@@ -302,6 +306,15 @@ object SettingsScreen {
             Text(text = stringResource(if (BuildConfig.DEBUG) R.string.app_info_build_type_debug else R.string.app_info_build_type_release))
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = stringResource(R.string.app_info_distribution, BuildConfig.DISTRIBUTION))
+        }
+    }
+
+    @Composable
+    private fun ShaderTestButton(viewModel: SettingsViewModel) {
+        RoundedBox {
+            Button(modifier = Modifier.fillMaxWidth(), onClick = { viewModel.openShadersTest() }) {
+                Text(text = stringResource(R.string.shaders_test), color = MaterialTheme.colorScheme.onPrimary)
+            }
         }
     }
 }

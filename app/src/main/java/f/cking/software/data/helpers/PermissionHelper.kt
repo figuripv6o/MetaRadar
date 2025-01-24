@@ -12,6 +12,8 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import f.cking.software.R
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class PermissionHelper(
     private val context: Context,
@@ -21,6 +23,7 @@ class PermissionHelper(
 
     private var pending: (() -> Unit)? = null
     private var permissionRequestTime: Long? = null
+    private val backgroundPermissionState = MutableStateFlow(checkBackgroundLocationPermition())
 
     fun checkBlePermissions(
         onRequestPermissions: (permissions: Array<String>, permissionRequestCode: Int, pendingFun: () -> Unit) -> Unit = ::requestPermissions,
@@ -51,7 +54,7 @@ class PermissionHelper(
         }
     }
 
-    fun onPermissionGranted(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    fun onPermissionResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         val allPermissionsGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
         val requestTime = permissionRequestTime
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
@@ -62,6 +65,7 @@ class PermissionHelper(
                 intentHelper.openAppSettings()
             }
         }
+        fetchBackgroundLocationPermission()
     }
 
     private fun requestPermissions(
@@ -80,6 +84,18 @@ class PermissionHelper(
 
     fun checkAllPermissions(): Boolean {
         return (BLE_PERMISSIONS + BACKGROUND_LOCATION).all { checkPermission(it) }
+    }
+
+    fun observeBackgroundLocationPermission(): Flow<Boolean> {
+        return backgroundPermissionState
+    }
+
+    fun checkBackgroundLocationPermition(): Boolean {
+        return checkPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    }
+
+    private fun fetchBackgroundLocationPermission() {
+        backgroundPermissionState.value = checkBackgroundLocationPermition()
     }
 
     fun checkLocationPermission(): Boolean {

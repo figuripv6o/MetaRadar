@@ -22,6 +22,8 @@ import f.cking.software.domain.interactor.RestoreDatabaseInteractor
 import f.cking.software.domain.interactor.SaveReportInteractor
 import f.cking.software.domain.interactor.SelectBackupFileInteractor
 import f.cking.software.domain.model.JournalEntry
+import f.cking.software.ui.ScreenNavigationCommands
+import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -39,6 +41,7 @@ class SettingsViewModel(
     private val restoreDatabaseInteractor: RestoreDatabaseInteractor,
     private val intentHelper: IntentHelper,
     private val permissionHelper: PermissionHelper,
+    private val router: Router,
 ) : ViewModel() {
 
     private val TAG = "SettingsViewModel"
@@ -140,6 +143,10 @@ class SettingsViewModel(
 
     fun opReportIssueClick() {
         intentHelper.openUrl(BuildConfig.REPORT_ISSUE_URL)
+    }
+
+    fun openShadersTest() {
+        router.navigate(ScreenNavigationCommands.OpenShaderTestScreen)
     }
 
     fun onGithubClick() {

@@ -23,7 +23,7 @@ object InteractorsModule {
         factory { BackupDatabaseInteractor(get(), get()) }
         factory { CreateBackupFileInteractor(get(), get()) }
         factory { SelectBackupFileInteractor(get(), get()) }
-        factory { RestoreDatabaseInteractor(get(), get(), get()) }
+        factory { RestoreDatabaseInteractor(get(), get()) }
         factory { SaveRadarProfile(get(), get()) }
         factory { DeleteRadarProfile(get(), get()) }
         factory { CheckDeviceLocationHistoryInteractor(get()) }

@@ -10,6 +10,7 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import f.cking.software.R
+import f.cking.software.data.helpers.IntentHelper.ScreenNavigation
 import f.cking.software.domain.interactor.CheckProfileDetectionInteractor
 import f.cking.software.ui.MainActivity
 import kotlin.random.Random
@@ -17,6 +18,7 @@ import kotlin.random.Random
 class NotificationsHelper(
     private val context: Context,
     private val powerModeHelper: PowerModeHelper,
+    private val intentHelper: IntentHelper,
 ) {
 
     private val notificationManager by lazy { context.getSystemService(NotificationManager::class.java) }
@@ -42,6 +44,7 @@ class NotificationsHelper(
             is ServiceNotificationContent.NoDataYet -> context.getString(R.string.ble_scanner_is_started_but_no_data)
             is ServiceNotificationContent.BluetoothIsTurnedOff -> context.getString(R.string.bluetooth_is_not_available_title)
             is ServiceNotificationContent.LocationIsTurnedOff -> context.getString(R.string.location_is_turned_off_title)
+            is ServiceNotificationContent.BackgroundLocationIsRestricted -> context.getString(R.string.background_location_is_restricted)
         }
 
         val title = if (powerModeHelper.powerMode() == PowerModeHelper.PowerMode.POWER_SAVING) {
@@ -107,6 +110,17 @@ class NotificationsHelper(
             button = NotificationButton(
                 intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS),
                 text = context.getString(R.string.turn_on),
+            )
+        )
+    }
+
+    fun notifyBackgroundLocationIsRestricted() {
+        notifyError(
+            title = context.getString(R.string.background_location_restricted_title),
+            content = context.getString(R.string.background_location_restricted_content),
+            button = NotificationButton(
+                intent = intentHelper.openScreenIntent(ScreenNavigation.BACKGROUND_LOCATION_DESCRIPTION),
+                text = context.getString(R.string.background_location_restricted_button),
             )
         )
     }
@@ -213,6 +227,8 @@ class NotificationsHelper(
         object BluetoothIsTurnedOff : ServiceNotificationContent
 
         object LocationIsTurnedOff : ServiceNotificationContent
+
+        object BackgroundLocationIsRestricted : ServiceNotificationContent
     }
 
     companion object {
