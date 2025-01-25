@@ -215,7 +215,7 @@
     <string name="device_details_week">Week</string>
     <string name="device_details_month">Month</string>
     <string name="device_details_all_time">All time</string>
-    <string name="device_history_pint_style">Points style</string>
+    <string name="device_history_pint_style">History style</string>
     <string name="device_history_pint_style_markers">Markers</string>
     <string name="device_history_pint_style_path">Path</string>
     <string name="time_ago">%s ago</string>

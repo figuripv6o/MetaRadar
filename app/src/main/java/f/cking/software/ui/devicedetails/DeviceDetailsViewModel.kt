@@ -115,18 +115,15 @@ class DeviceDetailsViewModel(
         val fromTime = System.currentTimeMillis() - historyPeriod.periodMills
         val fetched = locationRepository.getAllLocationsByAddress(address, fromTime = fromTime)
         val nextStep = historyPeriod.next()
-        val prev = historyPeriod.previous()
-
-        val shouldStepBack = autotunePeriod
-                && fetched.size > MAX_POINTS_FOR_AUTO_UPGRADE_PERIOD
-                && prev != null
 
         val shouldStepNext = autotunePeriod && fetched.isEmpty() && nextStep != null
 
-        if (shouldStepBack) {
-            selectHistoryPeriodSelected(prev!!, address, autotunePeriod = false)
-        } else if (shouldStepNext) {
-            selectHistoryPeriodSelected(nextStep!!, address, autotunePeriod)
+        if (shouldStepNext) {
+            selectHistoryPeriodSelected(nextStep, address, autotunePeriod)
+        }
+
+        if (fetched.size > MAX_POINTS_FOR_MARKERS) {
+            pointsStyle = PointsStyle.PATH
         }
 
         pointsState = fetched
@@ -227,11 +224,11 @@ class DeviceDetailsViewModel(
     )
 
     companion object {
+        private const val MAX_POINTS_FOR_MARKERS = 5_000
         private const val HISTORY_PERIOD_DAY = 24 * 60 * 60 * 1000L // 24 hours
         private const val HISTORY_PERIOD_WEEK = 7 * 24 * 60 * 60 * 1000L // 1 week
         private const val HISTORY_PERIOD_MONTH = 31 * 24 * 60 * 60 * 1000L // 1 month
         private const val HISTORY_PERIOD_LONG = Long.MAX_VALUE
-        private const val MAX_POINTS_FOR_AUTO_UPGRADE_PERIOD = 20_000
         private val DEFAULT_HISTORY_PERIOD = HistoryPeriod.DAY
         private val ONLINE_THRESHOLD_MS = PowerModeHelper.PowerMode.POWER_SAVING.scanDuration + PowerModeHelper.PowerMode.POWER_SAVING.scanDuration + 3000L
         private val DEFAULT_POINTS_STYLE = PointsStyle.MARKERS

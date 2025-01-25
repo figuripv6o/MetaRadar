@@ -665,6 +665,7 @@ object DeviceDetailsScreen {
                 batchProcessor.process(mapUpdate.points, mapUpdate.map)
             }
             DeviceDetailsViewModel.PointsStyle.PATH -> {
+                batchProcessor.cancel()
                 mapUpdate.map.overlays.clear()
                 val points = mapUpdate.points.map { GeoPoint(it.lat, it.lng) }
                 val polyline = Polyline(mapUpdate.map).apply {
