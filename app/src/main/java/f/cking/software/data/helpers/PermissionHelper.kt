@@ -25,7 +25,7 @@ class PermissionHelper(
     private var permissionRequestTime: Long? = null
     private val backgroundPermissionState = MutableStateFlow(backgroundLocationAllowed())
 
-    fun checkBlePermissions(
+    fun checkOrRequestPermission(
         onRequestPermissions: (permissions: Array<String>, permissionRequestCode: Int, pendingFun: () -> Unit) -> Unit = ::requestPermissions,
         permissions: Array<String> = BLE_PERMISSIONS,
         permissionRequestCode: Int = PERMISSIONS_REQUEST_CODE,
@@ -80,6 +80,10 @@ class PermissionHelper(
             permissions,
             permissionRequestCode
         )
+    }
+
+    fun blePermissionsAllowed(): Boolean {
+        return BLE_PERMISSIONS.all { checkPermission(it) }
     }
 
     fun checkAllPermissions(): Boolean {

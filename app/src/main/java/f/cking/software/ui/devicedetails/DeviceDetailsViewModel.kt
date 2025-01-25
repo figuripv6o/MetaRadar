@@ -98,7 +98,7 @@ class DeviceDetailsViewModel(
     }
 
     private fun observeLocation() {
-        permissionHelper.checkBlePermissions {
+        permissionHelper.checkOrRequestPermission {
             viewModelScope.launch {
                 locationProvider.fetchOnce()
                 locationProvider.observeLocation()
