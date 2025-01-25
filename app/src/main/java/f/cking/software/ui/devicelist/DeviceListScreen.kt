@@ -43,6 +43,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,7 +85,8 @@ object DeviceListScreen {
             .fillMaxSize()
         val viewModel: DeviceListViewModel = koinViewModel()
 
-        if (viewModel.devicesViewState.isEmpty() && !viewModel.isSearchMode && viewModel.appliedFilter.isEmpty() && viewModel.currentBatchViewState == null) {
+        val appliedFilter by viewModel.appliedFilter.collectAsState()
+        if (viewModel.devicesViewState.isEmpty() && !viewModel.isSearchMode && appliedFilter.isEmpty() && viewModel.currentBatchViewState == null) {
             ContentPlaceholder(stringResource(R.string.device_list_placeholder), modifier)
             if (viewModel.isLoading) {
                 LinearProgressIndicator(
@@ -357,9 +360,14 @@ object DeviceListScreen {
                 }
             }
         } else {
+            val text = if (viewModel.areFiltersApplied) {
+                stringResource(R.string.current_batch_empty_filtered)
+            } else {
+                stringResource(R.string.current_batch_empty)
+            }
             Text(
                 modifier = Modifier.padding(16.dp),
-                text = stringResource(R.string.current_batch_empty),
+                text = text,
                 fontWeight = FontWeight.Light,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -473,10 +481,12 @@ object DeviceListScreen {
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .fillMaxWidth()
             ) {
+                val appliedFilter by viewModel.appliedFilter.collectAsState()
+
                 LazyRow(
                     modifier = Modifier.padding(vertical = 8.dp),
                 ) {
-                    val allFilters = (viewModel.quickFilters + viewModel.appliedFilter).toSet()
+                    val allFilters = (viewModel.quickFilters + appliedFilter).toSet()
 
                     item { Spacer(modifier = Modifier.width(16.dp)) }
 
@@ -487,7 +497,7 @@ object DeviceListScreen {
 
                     allFilters.forEach {
                         item {
-                            val isSelected = viewModel.appliedFilter.contains(it)
+                            val isSelected = appliedFilter.contains(it)
 
                             FilterChip(
                                 onClick = { viewModel.onFilterClick(it) },
@@ -553,6 +563,7 @@ object DeviceListScreen {
 
     @Composable
     private fun SearchChip(viewModel: DeviceListViewModel) {
+        val searchQuery by viewModel.searchQuery.collectAsState()
         FilterChip(
             leadingIcon = {
                 val icon = if (viewModel.isSearchMode) Icons.Filled.Delete else Icons.Filled.Search
@@ -561,13 +572,14 @@ object DeviceListScreen {
             onClick = { viewModel.onOpenSearchClick() },
             selected = viewModel.isSearchMode,
             label = {
-                Text(text = viewModel.searchQuery?.takeIf { it.isNotBlank() } ?: stringResource(R.string.search))
+                Text(text = searchQuery?.takeIf { it.isNotBlank() } ?: stringResource(R.string.search))
             }
         )
     }
 
     @Composable
     private fun SearchStr(viewModel: DeviceListViewModel) {
+        val searchQuery by viewModel.searchQuery.collectAsState()
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -579,11 +591,11 @@ object DeviceListScreen {
                     .fillMaxWidth()
                     .focusTarget()
                     .focusRequester(focusRequest),
-                value = viewModel.searchQuery.orEmpty(),
+                value = searchQuery.orEmpty(),
                 onValueChange = { viewModel.onSearchInput(it) },
                 placeholder = { Text(text = stringResource(R.string.search_query), fontWeight = FontWeight.Light) },
                 trailingIcon = {
-                    if (viewModel.searchQuery.isNullOrBlank()) {
+                    if (searchQuery.isNullOrBlank()) {
                         Icon(
                             Icons.Filled.Delete,
                             contentDescription = stringResource(R.string.close_search),

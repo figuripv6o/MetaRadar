@@ -26,7 +26,9 @@ import f.cking.software.service.BgScanService
 import f.cking.software.ui.ScreenNavigationCommands
 import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -38,7 +40,7 @@ class DeviceListViewModel(
     private val context: Application,
     private val devicesRepository: DevicesRepository,
     private val filterCheckerImpl: FilterCheckerImpl,
-    private val permissionHelper: PermissionHelper,
+    permissionHelper: PermissionHelper,
     val router: Router,
     private val checkNeedToShowEnjoyTheAppInteractor: CheckNeedToShowEnjoyTheAppInteractor,
     private val enjoyTheAppAskLaterInteractor: EnjoyTheAppAskLaterInteractor,
@@ -50,8 +52,8 @@ class DeviceListViewModel(
     var devicesViewState by mutableStateOf(emptyList<DeviceData>())
     var activeScannerExpandedState by mutableStateOf(ActiveScannerExpandedState.COLLAPSED)
     var currentBatchViewState by mutableStateOf<List<DeviceData>?>(null)
-    var appliedFilter: List<FilterHolder> by mutableStateOf(emptyList())
-    var searchQuery: String? by mutableStateOf(null)
+    var appliedFilter: MutableStateFlow<List<FilterHolder>> = MutableStateFlow(emptyList())
+    var searchQuery: MutableStateFlow<String?> = MutableStateFlow(null)
     var isSearchMode: Boolean by mutableStateOf(false)
     var isLoading: Boolean by mutableStateOf(false)
     var isPaginationEnabled: Boolean by mutableStateOf(false)
@@ -67,6 +69,8 @@ class DeviceListViewModel(
         settingsRepository.observeHideBackgroundLocationWarning(),
     ) { permissionGranted, hideWarningTime -> !permissionGranted && checkBackgroundWarningIsExpired(hideWarningTime) }
         .collectAsState(viewModelScope, false)
+    val areFiltersApplied by combine(appliedFilter, searchQuery) { filters, query -> filters.isNotEmpty() || !query.isNullOrBlank() }
+        .collectAsState(viewModelScope, false)
 
     private var scannerObservingJob: Job? = null
     private var lastBatchJob: Job? = null
@@ -77,27 +81,24 @@ class DeviceListViewModel(
     }
 
     fun onFilterClick(filter: FilterHolder) {
-        val newFilters = appliedFilter.toMutableList()
+        val newFilters = appliedFilter.value.toMutableList()
         if (newFilters.contains(filter)) {
             newFilters.remove(filter)
         } else {
             newFilters.add(filter)
         }
-        appliedFilter = newFilters
-        fetchDevices()
+        viewModelScope.launch { appliedFilter.emit(newFilters) }
     }
 
     fun onOpenSearchClick() {
         isSearchMode = !isSearchMode
         if (!isSearchMode) {
-            searchQuery = null
+            viewModelScope.launch { searchQuery.emit(null) }
         }
-        fetchDevices()
     }
 
     fun onSearchInput(str: String) {
-        searchQuery = str
-        fetchDevices()
+        viewModelScope.launch { searchQuery.emit(str) }
     }
 
     fun onDeviceClick(device: DeviceData) {
@@ -121,7 +122,7 @@ class DeviceListViewModel(
 
     private fun checkScreenMode(invalidateCurrentBatch: Boolean) {
         val isScannerEnabled = BgScanService.isActive
-        val anyFilterApplyed = isSearchMode || appliedFilter.isNotEmpty()
+        val anyFilterApplyed = isSearchMode || appliedFilter.value.isNotEmpty()
 
         scannerObservingJob?.cancel()
         disablePagination()
@@ -203,67 +204,75 @@ class DeviceListViewModel(
         }
     }
 
+    @ExperimentalCoroutinesApi
     private fun observeCurrentBatch(): Job {
         return viewModelScope.launch {
-            devicesRepository.observeLastBatch()
-                .onStart {
-                    isLoading = true
-                    currentBatchViewState = emptyList()
-                    devicesRepository.clearLastBatch()
-                }
+            combine(
+                appliedFilter,
+                searchQuery,
+                devicesRepository.observeLastBatch()
+                    .onStart {
+                        isLoading = true
+                        currentBatchViewState = emptyList()
+                        devicesRepository.clearLastBatch()
+                    }
+            ) { filters, query, devices ->
+                isLoading = true
+                val devices = devices
+                    .withFilters(filters, query)
+                    .sortedWith(currentBatchSortingStrategy.comparator)
+                isLoading = false
+                devices
+            }
                 .collect { devices ->
-                    isLoading = true
-                    currentBatchViewState = devices.sortedWith(currentBatchSortingStrategy.comparator)
-                    isLoading = false
+                    currentBatchViewState = devices
                 }
         }
     }
 
     private fun observeAllDevices(): Job {
         return viewModelScope.launch {
-            devicesRepository.observeAllDevices()
+            combine(
+                appliedFilter,
+                searchQuery,
+                devicesRepository.observeAllDevices(),
+            ) { filters, query, devices ->
+                withContext(Dispatchers.Default) {
+                    isLoading = true
+                    val result = devices
+                        .withFilters(filters, query)
+                        .sortedWith(GENERAL_COMPARATOR)
+                        .apply { showEnjoyTheAppIfNeeded() }
+                    isLoading = false
+                    result
+                }
+            }
                 .onStart {
                     isLoading = true
                 }
                 .collect { devices ->
-                    isLoading = true
-                    applyDevices(devices)
-                    isLoading = false
+                    devicesViewState = devices
                 }
         }
     }
 
-    private fun fetchDevices() {
-        checkScreenMode(false)
-    }
-
-    private suspend fun applyDevices(devices: List<DeviceData>) {
+    private suspend inline fun List<DeviceData>.withFilters(
+        appliedFilters: List<FilterHolder>,
+        searchQuery: String?,
+    ): List<DeviceData> {
         val filter = withContext(Dispatchers.Main) {
             when {
-                appliedFilter.isEmpty() -> null
-                appliedFilter.size == 1 -> appliedFilter.first().filter
-                else -> RadarProfile.Filter.All(appliedFilter.map { it.filter })
+                appliedFilters.isEmpty() -> null
+                appliedFilters.size == 1 -> appliedFilters.first().filter
+                else -> RadarProfile.Filter.All(appliedFilters.map { it.filter })
             }
         }
-
-        val query = withContext(Dispatchers.Main) {
-            searchQuery
-        }
-
-        withContext(Dispatchers.Default) {
-            devicesViewState = devices
-                .filter { checkFilter(it, filter) && filterQuery(it, query) }
-                .sortedWith(GENERAL_COMPARATOR)
-                .apply {
-                    showEnjoyTheAppIfNeeded()
-                }
-        }
+        val query = searchQuery
+        return this.filter { checkFilter(it, filter) && filterQuery(it, query) }
     }
 
     private suspend fun showEnjoyTheAppIfNeeded() {
-        if (enjoyTheAppState is EnjoyTheAppState.None
-            && checkNeedToShowEnjoyTheAppInteractor.execute()
-        ) {
+        if (enjoyTheAppState is EnjoyTheAppState.None && checkNeedToShowEnjoyTheAppInteractor.execute()) {
             enjoyTheAppState = EnjoyTheAppState.Question
         }
     }

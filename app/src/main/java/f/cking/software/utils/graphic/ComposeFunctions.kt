@@ -564,3 +564,21 @@ fun RadarIcon() {
         contentDescription = null,
     )
 }
+
+@Composable
+fun ListItem(icon: Painter, title: String, subtitle: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(painter = icon, contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Column {
+            Text(text = title, fontWeight = FontWeight.Bold)
+            Text(text = subtitle)
+        }
+    }
+}
