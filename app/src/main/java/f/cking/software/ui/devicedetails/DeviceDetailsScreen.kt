@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -579,6 +580,7 @@ object DeviceDetailsScreen {
         }
 
         var mapView: MapView? by remember { mutableStateOf(null) }
+        val colorScheme = MaterialTheme.colorScheme
 
         MapView(
             modifier = modifier.pointerInteropFilter { event ->
@@ -606,7 +608,7 @@ object DeviceDetailsScreen {
                 }
             },
             onLoad = { map ->
-                initMapState(map)
+                initMapState(map, colorScheme)
                 mapIsReadyToUse.invoke()
                 map.addMapListener(object : MapListener {
                     override fun onScroll(event: ScrollEvent?): Boolean {
@@ -622,8 +624,7 @@ object DeviceDetailsScreen {
             },
             onUpdate = { map -> mapView = map  }
         )
-        val colorScheme = MaterialTheme.colorScheme
-        val mapColorScheme = remember { MapColorScheme(colorScheme.primary.copy(alpha = 0.6f,), colorScheme.error) }
+        val mapColorScheme = remember { MapColorScheme(colorScheme.scrim.copy(alpha = 0.6f,), Color.Red) }
 
         LaunchedEffect(mapView, viewModel.pointsState, viewModel.pointsStyle) {
             if (mapView != null) {
@@ -633,8 +634,9 @@ object DeviceDetailsScreen {
         }
     }
 
-    private fun initMapState(map: MapView) {
+    private fun initMapState(map: MapView, colorScheme: ColorScheme) {
         map.setMultiTouchControls(true)
+        map.setBackgroundColor(colorScheme.surface.toArgb())
         map.minZoomLevel = MapConfig.MIN_MAP_ZOOM
         map.maxZoomLevel = MapConfig.MAX_MAP_ZOOM
         map.controller.setZoom(MapConfig.MIN_MAP_ZOOM)
