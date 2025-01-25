@@ -170,7 +170,7 @@ class BgScanService : Service() {
         return when {
             !locationProvider.isLocationAvailable() -> handleLocationDisabled()
             !bleScannerHelper.isBluetoothEnabled() -> handleBleIsTurnedOffError()
-            permissionHelper.checkBackgroundLocationPermition() -> handleBackgroundLocationRestricted()
+            !permissionHelper.backgroundLocationAllowed() -> handleBackgroundLocationRestricted()
             else -> NotificationsHelper.ServiceNotificationContent.NoDataYet
         }
     }

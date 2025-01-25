@@ -225,7 +225,7 @@ object SelectLocationScreen {
                 mapView.controller.setZoom(MapConfig.DEFAULT_MAP_ZOOM)
             } else {
                 scope.launch {
-                    if (permissionHelper.checkLocationPermission()) {
+                    if (permissionHelper.locationAllowed()) {
                         locationProvider.observeLocation()
                             .filterNotNull()
                             .take(1)
