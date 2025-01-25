@@ -1,7 +1,7 @@
 package f.cking.software.ui.devicedetails
 
+import android.graphics.Paint
 import android.view.MotionEvent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,14 +22,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -49,12 +47,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -73,6 +72,7 @@ import f.cking.software.ui.AsyncBatchProcessor
 import f.cking.software.ui.map.MapView
 import f.cking.software.ui.tagdialog.TagDialog
 import f.cking.software.utils.graphic.GlassSystemNavbar
+import f.cking.software.utils.graphic.ListItem
 import f.cking.software.utils.graphic.RadarIcon
 import f.cking.software.utils.graphic.RoundedBox
 import f.cking.software.utils.graphic.SignalData
@@ -89,6 +89,10 @@ import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
+import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
+import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
+import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -367,6 +371,52 @@ object DeviceDetailsScreen {
     }
 
     @Composable
+    private fun PointsStyle(
+        viewModel: DeviceDetailsViewModel,
+    ) {
+        val dialog = rememberMaterialDialogState()
+        ThemedDialog(
+            dialogState = dialog,
+            buttons = {
+                negativeButton(
+                    stringResource(R.string.cancel),
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface)
+                ) { dialog.hide() }
+            },
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(stringResource(R.string.device_history_pint_style), fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Spacer(Modifier.height(8.dp))
+                DeviceDetailsViewModel.PointsStyle.entries.forEach { pointStyle ->
+                    val isSelected = viewModel.pointsStyle == pointStyle
+
+                    val onClick = {
+                        viewModel.pointsStyle = pointStyle
+                        dialog.hide()
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clickable(onClick = onClick),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = isSelected, onClick = onClick)
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = stringResource(pointStyle.displayNameRes), color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            }
+        }
+        ListItem(
+            icon = painterResource(R.drawable.ic_style),
+            title = stringResource(R.string.device_history_pint_style),
+            subtitle = stringResource(viewModel.pointsStyle.displayNameRes),
+            onClick = { dialog.show() }
+        )
+    }
+
+    @Composable
     private fun HistoryPeriod(
         deviceData: DeviceData,
         viewModel: DeviceDetailsViewModel,
@@ -388,56 +438,29 @@ object DeviceDetailsScreen {
                 Spacer(Modifier.height(8.dp))
                 DeviceDetailsViewModel.HistoryPeriod.entries.forEach { period ->
                     val isSelected = viewModel.historyPeriod == period
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            viewModel.selectHistoryPeriodSelected(period, deviceData.address, autotunePeriod = false)
-                            dialog.hide()
-                        },
-                        enabled = !isSelected,
+
+                    val onClick = {
+                        viewModel.selectHistoryPeriodSelected(period, deviceData.address, autotunePeriod = false)
+                        dialog.hide()
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clickable(onClick = onClick),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val periodDisplayName = stringResource(period.displayNameRes)
-                        val text = if (isSelected) {
-                            stringResource(R.string.device_details_dialog_time_period_selected, periodDisplayName)
-                        } else {
-                            periodDisplayName
-                        }
-                        Text(text = text)
+                        RadioButton(selected = isSelected, onClick = onClick)
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = stringResource(period.displayNameRes), color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { dialog.show() },
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row {
-                        Text(text = stringResource(R.string.device_details_history_period), fontSize = 18.sp)
-                        Text(text = stringResource(viewModel.historyPeriod.displayNameRes), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.device_details_history_period_subtitle),
-                        fontWeight = FontWeight.Light,
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Image(
-                    modifier = Modifier.size(24.dp),
-                    imageVector = Icons.Default.Edit,
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
-                    contentDescription = stringResource(R.string.change)
-                )
-            }
-        }
+        ListItem(
+            icon = painterResource(R.drawable.ic_time),
+            title = stringResource(R.string.device_details_history_period, stringResource(viewModel.historyPeriod.displayNameRes)),
+            subtitle = stringResource(R.string.device_details_history_period_subtitle),
+            onClick = { dialog.show() }
+        )
     }
 
     @Composable
@@ -467,6 +490,7 @@ object DeviceDetailsScreen {
                 }
             }
             if (mapIsReady) {
+                PointsStyle(viewModel)
                 HistoryPeriod(deviceData = deviceData, viewModel = viewModel)
             }
         }
@@ -598,11 +622,13 @@ object DeviceDetailsScreen {
             },
             onUpdate = { map -> mapView = map  }
         )
+        val colorScheme = MaterialTheme.colorScheme
+        val mapColorScheme = remember { MapColorScheme(colorScheme.primary.copy(alpha = 0.6f,), colorScheme.error) }
 
-        LaunchedEffect(mapView, viewModel.pointsState, viewModel.pointsState) {
+        LaunchedEffect(mapView, viewModel.pointsState, viewModel.pointsStyle) {
             if (mapView != null) {
                 val mapUpdate = MapUpdate(viewModel.pointsState, viewModel.cameraState, mapView!!)
-                refreshMap(mapUpdate, batchProcessor)
+                refreshMap(mapUpdate, batchProcessor, mapColorScheme, viewModel.pointsStyle)
             }
         }
     }
@@ -620,12 +646,52 @@ object DeviceDetailsScreen {
         val map: MapView,
     )
 
+    private data class MapColorScheme(
+        val lineColor: Color,
+        val pointColor: Color,
+    )
+
     private fun refreshMap(
         mapUpdate: MapUpdate,
         batchProcessor: AsyncBatchProcessor<LocationModel, MapView>,
+        mapColorScheme: MapColorScheme,
+        pointsStyle: DeviceDetailsViewModel.PointsStyle,
     ) {
 
-        batchProcessor.process(mapUpdate.points, mapUpdate.map)
+        when (pointsStyle) {
+            DeviceDetailsViewModel.PointsStyle.MARKERS -> {
+                batchProcessor.process(mapUpdate.points, mapUpdate.map)
+            }
+            DeviceDetailsViewModel.PointsStyle.PATH -> {
+                mapUpdate.map.overlays.clear()
+                val points = mapUpdate.points.map { GeoPoint(it.lat, it.lng) }
+                val polyline = Polyline(mapUpdate.map).apply {
+                    this.setPoints(points)
+                    this.outlinePaint.apply {
+                        color = mapColorScheme.lineColor.toArgb()
+                    }
+                }
+
+                mapUpdate.map.overlays.add(polyline)
+
+                val pt = SimplePointTheme(points)
+
+                val paint = Paint().apply {
+                    style = Paint.Style.FILL
+                    setColor(mapColorScheme.pointColor.toArgb())
+                }
+
+                val fastPointOverlayOptions = SimpleFastPointOverlayOptions.getDefaultStyle()
+                    .setAlgorithm(SimpleFastPointOverlayOptions.RenderingAlgorithm.MAXIMUM_OPTIMIZATION)
+                    .setPointStyle(paint)
+                    .setRadius(5f)
+
+                val fastPointOverlay = SimpleFastPointOverlay(pt, fastPointOverlayOptions)
+                mapUpdate.map.overlays.add(fastPointOverlay)
+                mapUpdate.map.invalidate()
+            }
+        }
+
 
         when (val cameraConfig = mapUpdate.cameraState) {
             is DeviceDetailsViewModel.MapCameraState.SinglePoint -> {

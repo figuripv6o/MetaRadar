@@ -46,6 +46,7 @@ class DeviceDetailsViewModel(
     var historyPeriod by mutableStateOf(DEFAULT_HISTORY_PERIOD)
     var markersInLoadingState by mutableStateOf(false)
     var onlineStatusData: OnlineStatus? by mutableStateOf(null)
+    var pointsStyle: PointsStyle by mutableStateOf(DEFAULT_POINTS_STYLE)
 
     private var currentLocation: LocationModel? = null
 
@@ -202,6 +203,11 @@ class DeviceDetailsViewModel(
         }
     }
 
+    enum class PointsStyle(@StringRes val displayNameRes: Int) {
+        MARKERS(R.string.device_history_pint_style_markers),
+        PATH(R.string.device_history_pint_style_path),
+    }
+
     sealed interface MapCameraState {
         data class SinglePoint(
             val location: LocationModel,
@@ -227,8 +233,8 @@ class DeviceDetailsViewModel(
         private const val HISTORY_PERIOD_LONG = Long.MAX_VALUE
         private const val MAX_POINTS_FOR_AUTO_UPGRADE_PERIOD = 20_000
         private val DEFAULT_HISTORY_PERIOD = HistoryPeriod.DAY
-        private val ONLINE_THRESHOLD_MS =
-            PowerModeHelper.PowerMode.POWER_SAVING.scanDuration + PowerModeHelper.PowerMode.POWER_SAVING.scanDuration + 3000L
+        private val ONLINE_THRESHOLD_MS = PowerModeHelper.PowerMode.POWER_SAVING.scanDuration + PowerModeHelper.PowerMode.POWER_SAVING.scanDuration + 3000L
+        private val DEFAULT_POINTS_STYLE = PointsStyle.MARKERS
 
         private val DEFAULT_MAP_CAMERA_STATE = MapCameraState.SinglePoint(
             location = LocationModel(0.0, 0.0, 0),
