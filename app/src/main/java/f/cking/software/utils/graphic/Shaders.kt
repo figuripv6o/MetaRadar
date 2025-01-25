@@ -187,4 +187,24 @@ object Shaders {
         	return float4(content.eval((uv + uvR) * iResolution.xy).r, content.eval((uv + uvG) * iResolution.xy).g, content.eval((uv + uvB) * iResolution.xy).b, content.eval(fragCoord).a);
         }
     """
+
+    const val ARG_FACTOR = "factor"
+    const val ARG_RESOLUTION = "iResolution"
+    const val ARG_TIME = "time"
+
+    @Language("AGSL")
+    const val SLIDER_CURVE = """
+        uniform shader $ARG_CONTENT;
+        uniform float $ARG_FACTOR;
+        uniform float2 $ARG_RESOLUTION;
+        uniform float $ARG_TIME;
+        
+        float4 main(float2 fragCoord) {
+        
+            float2 uv = fragCoord / $ARG_RESOLUTION;
+            float sinShiftY = sin((uv.x + $ARG_TIME * 0.001) * 7) * 0.3 * $ARG_FACTOR;
+            
+            return content.eval(float2(uv.x, uv.y + sinShiftY) * $ARG_RESOLUTION);
+        }
+    """
 }

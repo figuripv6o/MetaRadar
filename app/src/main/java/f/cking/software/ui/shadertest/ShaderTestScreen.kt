@@ -2,7 +2,10 @@ package f.cking.software.ui.shadertest
 
 import android.annotation.SuppressLint
 import android.graphics.Rect
+import android.graphics.RenderEffect
+import android.graphics.RuntimeShader
 import android.os.Build
+import android.view.animation.AccelerateInterpolator
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,7 +37,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -53,6 +60,7 @@ import f.cking.software.BuildConfig
 import f.cking.software.R
 import f.cking.software.letIf
 import f.cking.software.utils.graphic.GlassSystemNavbar
+import f.cking.software.utils.graphic.Shaders
 import f.cking.software.utils.graphic.glass.GlassShader
 import f.cking.software.utils.graphic.glass.RefractionMaterial
 import f.cking.software.utils.graphic.glass.Tilt
@@ -60,6 +68,7 @@ import f.cking.software.utils.graphic.glass.glassPanel
 import f.cking.software.utils.graphic.pxToDp
 import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Router
+import kotlin.concurrent.timer
 import kotlin.math.max
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -233,6 +242,8 @@ object ShaderTestScreen {
                     contentScale = ContentScale.FillWidth
                 )
                 Spacer(modifier = Modifier.height(200.dp))
+                WavingSlider()
+                Spacer(modifier = Modifier.height(200.dp))
             }
 
             Box(
@@ -279,6 +290,38 @@ object ShaderTestScreen {
         Slider(modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp), state = state)
+    }
+
+    @SuppressLint("NewApi")
+    @Composable
+    private fun WavingSlider() {
+        val curvedSliderState = remember { SliderState(value = 0.5f) }
+        val shader = remember { RuntimeShader(Shaders.SLIDER_CURVE) }
+        val interpolator = remember { AccelerateInterpolator() }
+        var time by remember { mutableFloatStateOf(0f) }
+
+        shader.setFloatUniform(Shaders.ARG_FACTOR, interpolator.getInterpolation(curvedSliderState.value))
+        shader.setFloatUniform(Shaders.ARG_TIME, time)
+
+        LaunchedEffect(Unit) {
+            val startTime = System.currentTimeMillis()
+            timer(period = 16) {
+                time = (System.currentTimeMillis() - startTime) % Float.MAX_VALUE
+            }
+        }
+        Slider(
+            modifier = Modifier.fillMaxWidth()
+                .onSizeChanged {
+                    shader.setFloatUniform(Shaders.ARG_RESOLUTION, it.width.toFloat(), it.height.toFloat())
+                }
+                .padding(16.dp)
+                .graphicsLayer {
+                    renderEffect = RenderEffect
+                        .createRuntimeShaderEffect(shader, Shaders.ARG_CONTENT)
+                        .asComposeRenderEffect()
+                },
+            state = curvedSliderState,
+        )
     }
 
     @Composable
