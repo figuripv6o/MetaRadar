@@ -14,7 +14,7 @@
     <string name="ok">OK</string>
     <string name="turn_on">Turn on</string>
     <string name="report">Report</string>
-    <string name="shaders_test">Shaders test</string>
+    <string name="shaders_test" translatable="false">Shaders test</string>
 
     <plurals name="day">
         <item quantity="zero">%d days</item>
@@ -190,10 +190,11 @@
     <string name="enjoy_the_app_not_really">Not really</string>
     <string name="enjoy_the_app_ask_later">Ask me later</string>
     <string name="rate_the_app">Glad to hear this, can you rate the app?</string>
-    <string name="rate_the_app_github">GitHub</string>
+    <string name="rate_the_app_github" translatable="false">GitHub</string>
     <string name="report_the_problem">We are sorry to hear this. You can provide your feedback in the GitHub issues</string>
     <string name="current_batch_title">Devices around you</string>
     <string name="current_batch_empty">No devices have been found yet</string>
+    <string name="current_batch_empty_filtered">None of the devices found match the filters</string>
 
     <!-- Device Details -->
     <string name="device_details_title">Device details</string>
@@ -207,13 +208,16 @@
     <string name="device_details_last_detection">Last detection</string>
     <string name="device_details_dialog_time_period_selected">%s (selected)</string>
     <string name="change_history_period_dialog">Change location history period</string>
-    <string name="device_details_history_period">"History period: "</string>
+    <string name="device_details_history_period">"History period: %s"</string>
     <string name="device_details_history_period_subtitle">Showing big location history may affect map performance</string>
     <string name="device_details_no_location_history_for_such_period">No location history for such period</string>
     <string name="device_details_day">Day</string>
     <string name="device_details_week">Week</string>
     <string name="device_details_month">Month</string>
     <string name="device_details_all_time">All time</string>
+    <string name="device_history_pint_style">History style</string>
+    <string name="device_history_pint_style_markers">Markers</string>
+    <string name="device_history_pint_style_path">Path</string>
     <string name="time_ago">%s ago</string>
     <string name="lifetime_data_last_update">lifetime: %1$s | last update: %2$s ago</string>
     <string name="lifetime_data">lifetime: %1$s</string>
@@ -222,7 +226,6 @@
     <string name="create_new_tag">Create new</string>
     <string name="add_tag">Add tag</string>
     <string name="delete_tag_title">Delete tag \"%s\"?</string>
-    <string name="osm_copyright">© OpenStreetMap</string>
     <string name="silent_mode_is_enabled_disclaimer">The map is not available in the offline mode. To see the map disable the offline mode first.</string>
     <string name="rssi_value">%s dBm</string>
     <string name="distance_to_device">%s m</string>
@@ -293,19 +296,20 @@
 
     <!-- Shader test -->
     <string name="shader_test_title" translatable="false">Shaders test</string>
-    <string name="shader_test_panel_size">Glass scale: %d\%%</string>
-    <string name="shader_test_glass_aberration">Aberration index: %.2f</string>
-    <string name="shader_test_glass_refraction">Refraction index: %.2f</string>
-    <string name="shader_test_glass_type">Glass type</string>
-    <string name="shader_test_glass_type_sin">Curved</string>
-    <string name="shader_test_glass_type_mod">Fluted</string>
-    <string name="shader_test_glass_type_flat">Flat</string>
-    <string name="shader_test_curve_amplitude">Curve amplitude: %.2f</string>
-    <string name="shader_test_curve_length">Curve length: %.2f</string>
-    <string name="shader_test_tilt">x: %.2f\ny: %.2f</string>
+    <string name="shader_test_panel_size" translatable="false">Glass scale: %d\%%</string>
+    <string name="shader_test_glass_aberration" translatable="false">Aberration index: %.2f</string>
+    <string name="shader_test_glass_refraction" translatable="false">Refraction index: %.2f</string>
+    <string name="shader_test_glass_type" translatable="false">Glass type</string>
+    <string name="shader_test_glass_type_sin" translatable="false">Curved</string>
+    <string name="shader_test_glass_type_mod" translatable="false">Fluted</string>
+    <string name="shader_test_glass_type_flat" translatable="false">Flat</string>
+    <string name="shader_test_curve_amplitude" translatable="false">Curve amplitude: %.2f</string>
+    <string name="shader_test_curve_length" translatable="false">Curve length: %.2f</string>
+    <string name="shader_test_tilt" translatable="false">x: %.2f\ny: %.2f</string>
 
     <!-- Background location request dialog -->
     <string name="background_location_request_title">Why all-time location is needed</string>
     <string name="background_location_request_content">Our app uses Bluetooth Low Energy (BLE) to provide its core functionality. Due to Android’s policies, BLE access requires location permission because your location can be inferred from nearby BLE and WiFi signals.\n\nWhile the app works fine with location access only while you\'re using it, granting all-time location access ensures uninterrupted BLE scanning, even when the app is running in the background. Without this, the Android system may restrict or block BLE access, which could impact the app’s functionality.\n\nWe respect your privacy and only use location access for BLE scanning to make the app work seamlessly. The app does not transmit your data over the internet, and all information is securely stored locally on your device.</string>
     <string name="background_location_request_button">Grant permission</string>
+    <string name="osm_copyright" translatable="false">© OpenStreetMap</string>
 </resources>

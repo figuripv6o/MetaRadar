@@ -119,7 +119,6 @@
     <string name="not_applicable">N/A</string>
     <string name="notification_profile_is_near_you">A \"%s\" profil a közeledben van!</string>
     <string name="ok">OK</string>
-    <string name="osm_copyright">© OpenStreetMap</string>
     <string name="permission_data_coolect_info">Ez az alkalmazás nem gyűjt vagy oszt meg adatokat. A teljes projekt nyílt forráskódú és elérhető githubon</string>
     <string name="permission_intro_bg_location_text">Két oka van a helyedatokhoz való, háttérben történő hozzáférésnek:\n- A funkcionalitás részben a felhasználó jelenlegi helyedatainak analizálásával kapcsolatos.\n- Az android hátterében történő, helyes működéshez a helyadatokhoz való hozzáférés is szükséges, az applikáció miatt.</string>
     <string name="permissions_intro_bg_location_title">Helyadatok háttérben</string>
