@@ -23,9 +23,9 @@ class PermissionHelper(
 
     private var pending: (() -> Unit)? = null
     private var permissionRequestTime: Long? = null
-    private val backgroundPermissionState = MutableStateFlow(checkBackgroundLocationPermition())
+    private val backgroundPermissionState = MutableStateFlow(backgroundLocationAllowed())
 
-    fun checkBlePermissions(
+    fun checkOrRequestPermission(
         onRequestPermissions: (permissions: Array<String>, permissionRequestCode: Int, pendingFun: () -> Unit) -> Unit = ::requestPermissions,
         permissions: Array<String> = BLE_PERMISSIONS,
         permissionRequestCode: Int = PERMISSIONS_REQUEST_CODE,
@@ -82,6 +82,10 @@ class PermissionHelper(
         )
     }
 
+    fun blePermissionsAllowed(): Boolean {
+        return BLE_PERMISSIONS.all { checkPermission(it) }
+    }
+
     fun checkAllPermissions(): Boolean {
         return (BLE_PERMISSIONS + BACKGROUND_LOCATION).all { checkPermission(it) }
     }
@@ -90,15 +94,15 @@ class PermissionHelper(
         return backgroundPermissionState
     }
 
-    fun checkBackgroundLocationPermition(): Boolean {
+    fun backgroundLocationAllowed(): Boolean {
         return checkPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
     private fun fetchBackgroundLocationPermission() {
-        backgroundPermissionState.value = checkBackgroundLocationPermition()
+        backgroundPermissionState.value = backgroundLocationAllowed()
     }
 
-    fun checkLocationPermission(): Boolean {
+    fun locationAllowed(): Boolean {
         return checkPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 

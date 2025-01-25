@@ -103,7 +103,7 @@ class BgScanService : Service() {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
             )
 
-            permissionHelper.checkBlePermissions(
+            permissionHelper.checkOrRequestPermission(
                 onRequestPermissions = { _, _, _ ->
                     reportError(IllegalStateException("BLE Service is started but permissins are not granted"))
                     stopSelf()
@@ -170,7 +170,7 @@ class BgScanService : Service() {
         return when {
             !locationProvider.isLocationAvailable() -> handleLocationDisabled()
             !bleScannerHelper.isBluetoothEnabled() -> handleBleIsTurnedOffError()
-            permissionHelper.checkBackgroundLocationPermition() -> handleBackgroundLocationRestricted()
+            !permissionHelper.backgroundLocationAllowed() -> handleBackgroundLocationRestricted()
             else -> NotificationsHelper.ServiceNotificationContent.NoDataYet
         }
     }

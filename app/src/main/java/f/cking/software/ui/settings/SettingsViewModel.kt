@@ -91,7 +91,7 @@ class SettingsViewModel(
             if (locationProvider.isActive()) {
                 locationProvider.stopLocationListening()
                 locationProvider.startLocationFetching()
-            } else if (permissionHelper.checkLocationPermission()) {
+            } else if (permissionHelper.locationAllowed()) {
                 locationProvider.fetchOnce()
             }
         }

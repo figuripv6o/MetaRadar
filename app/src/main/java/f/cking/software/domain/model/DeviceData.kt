@@ -1,7 +1,9 @@
 package f.cking.software.domain.model
 
 import android.content.Context
+import f.cking.software.dateTimeStringFormatLocalized
 import f.cking.software.getTimePeriodStr
+import java.time.format.FormatStyle
 
 data class DeviceData(
     val address: String,
@@ -25,8 +27,16 @@ data class DeviceData(
         return (System.currentTimeMillis() - firstDetectTimeMs).getTimePeriodStr(context)
     }
 
+    fun firstDetectionExactTime(context: Context, formatStyle: FormatStyle = FormatStyle.SHORT): String {
+        return firstDetectTimeMs.dateTimeStringFormatLocalized(formatStyle)
+    }
+
     fun lastDetectionPeriod(context: Context): String {
         return (System.currentTimeMillis() - lastDetectTimeMs).getTimePeriodStr(context)
+    }
+
+    fun lastDetectionExactTime(context: Context, formatStyle: FormatStyle = FormatStyle.SHORT): String {
+        return lastDetectTimeMs.dateTimeStringFormatLocalized(formatStyle)
     }
 
     fun hasBeenSeenTimeAgo(): Long {

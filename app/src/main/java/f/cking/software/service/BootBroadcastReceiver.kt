@@ -29,7 +29,7 @@ class BootBroadcastReceiver : BroadcastReceiver() {
 
     private fun tryToRunService(context: Context) {
         if (settingsRepository.getRunOnStartup()) {
-            if (permissionHelper.checkAllPermissions()) {
+            if (permissionHelper.blePermissionsAllowed()) {
                 try {
                     BgScanService.start(context)
                 } catch (error: Exception) {
@@ -38,13 +38,23 @@ class BootBroadcastReceiver : BroadcastReceiver() {
                         title = "[Launch on system startup error]: ${error.message ?: error::class.java}",
                         stackTrace = error.stackTraceToString(),
                     )
-                    scope.launch {
-                        saveReportInteractor.execute(report)
-                    }
+                    report(report)
                 }
             } else {
-                Timber.e("Not all permissions granted, can't start service from the boot receiver")
+                report(
+                    JournalEntry.Report.Error(
+                        title = "[Launch on system startup error]: Not all permissions granted",
+                        stackTrace = IllegalStateException("Not all permissions granted").stackTraceToString()
+                    )
+                )
             }
+        }
+    }
+
+    private fun report(report: JournalEntry.Report.Error) {
+        Timber.e(report.stackTrace)
+        scope.launch {
+            saveReportInteractor.execute(report)
         }
     }
 }
