@@ -25,6 +25,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.regex.PatternSyntaxException
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -64,6 +65,11 @@ fun timeFromDateTime(date: LocalDate, time: LocalTime): Long =
 fun Long.dateTimeStringFormat(format: String, timeZone: ZoneId = ZoneId.systemDefault()): String {
     return LocalDateTime.of(toLocalDate(timeZone), toLocalTime(timeZone))
         .format(DateTimeFormatter.ofPattern(format))
+}
+
+fun Long.dateTimeStringFormatLocalized(formatStyle: FormatStyle = FormatStyle.SHORT, timeZone: ZoneId = ZoneId.systemDefault()): String {
+    return LocalDateTime.of(toLocalDate(timeZone), toLocalTime(timeZone))
+        .format(DateTimeFormatter.ofLocalizedDateTime(formatStyle))
 }
 
 fun LocalTime.dateTimeFormat(format: String): String {

@@ -95,6 +95,7 @@ import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import timber.log.Timber
+import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 object DeviceDetailsScreen {
@@ -284,18 +285,14 @@ object DeviceDetailsScreen {
                         Spacer(Modifier.width(4.dp))
                         Text(text = deviceData.detectCount.toString())
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
 
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(text = stringResource(R.string.device_details_first_detection), fontWeight = FontWeight.Bold)
-                    Text(
-                        text = stringResource(R.string.time_ago, deviceData.firstDetectionPeriod(LocalContext.current))
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = deviceData.firstDetectionExactTime(LocalContext.current, formatStyle = FormatStyle.MEDIUM))
 
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(text = stringResource(R.string.device_details_last_detection), fontWeight = FontWeight.Bold)
-                    Text(
-                        text = stringResource(R.string.time_ago, deviceData.lastDetectionPeriod(LocalContext.current))
-                    )
+                    Text(text = deviceData.lastDetectionExactTime(LocalContext.current, formatStyle = FormatStyle.MEDIUM))
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
