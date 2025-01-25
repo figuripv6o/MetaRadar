@@ -190,10 +190,11 @@
     <string name="enjoy_the_app_not_really">Not really</string>
     <string name="enjoy_the_app_ask_later">Ask me later</string>
     <string name="rate_the_app">Glad to hear this, can you rate the app?</string>
-    <string name="rate_the_app_github">GitHub</string>
+    <string name="rate_the_app_github" translatable="false">GitHub</string>
     <string name="report_the_problem">We are sorry to hear this. You can provide your feedback in the GitHub issues</string>
     <string name="current_batch_title">Devices around you</string>
     <string name="current_batch_empty">No devices have been found yet</string>
+    <string name="current_batch_empty_filtered">None of the devices found match the filters</string>
 
     <!-- Device Details -->
     <string name="device_details_title">Device details</string>
@@ -222,7 +223,7 @@
     <string name="create_new_tag">Create new</string>
     <string name="add_tag">Add tag</string>
     <string name="delete_tag_title">Delete tag \"%s\"?</string>
-    <string name="osm_copyright">© OpenStreetMap</string>
+    <string name="osm_copyright" translatable="false">© OpenStreetMap</string>
     <string name="silent_mode_is_enabled_disclaimer">The map is not available in the offline mode. To see the map disable the offline mode first.</string>
     <string name="rssi_value">%s dBm</string>
     <string name="distance_to_device">%s m</string>
