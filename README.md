@@ -20,6 +20,6 @@ This application does not share your personal data or geolocation, all work is o
 The project is completely free to use and fully open-source, fueled by a passion for craftsmanship and enthusiasm. The best way to support its development is by becoming a public sponsor or making a one-time or monthly donation through one of the following methods:
 
 * Github Sponsors: [![GitHub Sponsors](https://img.shields.io/github/sponsors/Semper-Viventem?style=flat&logo=github)
-](https://img.shields.io/github/sponsors/Semper-Viventem?style=flat&logo=github)
+](https://github.com/sponsors/Semper-Viventem)
 * Bitcoin: `bc1qplw7qadk78ljdsm64j3tpvquazlj2htkar9eed`
 * Ethereum: `0x755fca126107A1f9f1f7CA27193dAf891CA1653B`
