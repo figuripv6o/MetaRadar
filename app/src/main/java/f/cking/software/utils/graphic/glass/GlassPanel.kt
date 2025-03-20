@@ -39,6 +39,7 @@ fun Modifier.glassPanel(
     aberrationIndex: Float = 0.1f,
     curveType: GlassShader.CurveType = GlassShader.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
+    blurRadius: Float = 0f,
     tilt: Tilt = Tilt.Fixed(),
 ): Modifier = this.glassPanel(
     rect = rect,
@@ -46,6 +47,7 @@ fun Modifier.glassPanel(
     aberrationIndex = aberrationIndex,
     curveType = curveType,
     elevationPx = elevationPx,
+    blurRadius = blurRadius,
     tilt = tilt,
 )
 
@@ -57,6 +59,7 @@ fun Modifier.glassPanel(
     aberrationIndex: Float = 0.1f,
     curveType: GlassShader.CurveType = GlassShader.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
+    blurRadius: Float = 0f,
     tilt: Tilt = Tilt.Fixed(),
 ): Modifier = composed {
 
@@ -82,6 +85,7 @@ fun Modifier.glassPanel(
     glassShader.setIntUniform(GlassShader.ARG_CURVE_TYPE, curveType::class.getType())
     glassShader.setFloatUniform(GlassShader.ARG_CURVE_PARAM_A, curveType.A)
     glassShader.setFloatUniform(GlassShader.ARG_CURVE_PARAM_K, curveType.k)
+    glassShader.setFloatUniform(GlassShader.ARG_BLUR, blurRadius)
     glassShader.setFloatUniform(GlassShader.ARG_ABERRATION_INDEX, aberrationIndex)
 
     glassShader.setFloatUniform(GlassShader.ARG_RESOLUTION, contentSize.width.toFloat(), contentSize.height.toFloat())

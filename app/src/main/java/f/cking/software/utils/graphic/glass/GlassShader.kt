@@ -19,6 +19,7 @@ object GlassShader {
     const val ARG_CURVE_PARAM_K = "curveParamK"
     const val ARG_ABERRATION_INDEX = "aberrationIndex"
     const val ARG_TILT = "tilt"
+    const val ARG_BLUR = "blurRadius"
 
 
     sealed interface CurveType {
@@ -61,6 +62,7 @@ object GlassShader {
         uniform float $ARG_CURVE_PARAM_A;
         uniform float $ARG_CURVE_PARAM_K;
         uniform float $ARG_ABERRATION_INDEX;
+        uniform float $ARG_BLUR;
         uniform float2 $ARG_TILT;
         
         float curveSin(float2 fCoord, float A, float k) {
@@ -113,6 +115,35 @@ object GlassShader {
                 && fCoord.y < $ARG_PANEL_Y + $ARG_PANEL_HEIGHT;
         }
         
+        
+        float4 blurred(float2 fragCoord) {
+            const float Pi = 6.28318530718; // Pi*2
+            const float Directions = 16.0; // BLUR DIRECTIONS (Default 16.0 - More is better but slower)
+            const float Quality = 3.0; // BLUR QUALITY (Default 4.0 - More is better but slower)
+            float Size = $ARG_BLUR; // BLUR SIZE (Radius)
+            
+            float2 Radius = Size / iResolution.xy;
+            
+            float2 uv = fragCoord / iResolution; // Normalize screen coordinates
+            // Pixel color
+            float4 Color = $ARG_CONTENT.eval(fragCoord);
+            
+            // Blur calculations
+            float sampleCount = 0.0;
+            for (float d = 0.0; d < Pi; d += Pi / Directions) {
+                for (float i = 1.0 / Quality; i <= 1.0; i += 1.0 / Quality) {
+                    Color += $ARG_CONTENT.eval((uv + float2(cos(d), sin(d)) * Radius * i) * iResolution);
+                    sampleCount += 1.0;
+                }
+            }
+            
+            // Average the color by the total sample count
+            Color /= sampleCount;
+            
+            // Output to screen
+            return Color;
+        }
+        
         float4 main(float2 fragCoord) {
         
             if (!isInsidePanel(fragCoord)) {
@@ -136,10 +167,10 @@ object GlassShader {
             float2 refractedG = refract(incident, normal, iorG).xy;
             float2 refractedB = refract(incident, normal, iorB).xy;
             
-            float r = $ARG_CONTENT.eval((uv + refractedR) * iResolution).r;
-            float g = $ARG_CONTENT.eval((uv + refractedG) * iResolution).g;
-            float b = $ARG_CONTENT.eval((uv + refractedB) * iResolution).b;
-            float a = $ARG_CONTENT.eval((uv + refractedG) * iResolution).a;
+            float r = blurred((uv + refractedR) * iResolution).r;
+            float g = blurred((uv + refractedG) * iResolution).g;
+            float b = blurred((uv + refractedB) * iResolution).b;
+            float a = blurred((uv + refractedG) * iResolution).a;
             
             return float4(r, g, b, a);
         }
