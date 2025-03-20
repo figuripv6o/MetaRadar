@@ -109,6 +109,7 @@ object ShaderTestScreen {
 
         val sliderSizeState = remember { SliderState(value = 0.5f) }
         val sliderAberrationState = remember { SliderState(value = 0.1f) }
+        val sliderBlurRadiusState = remember { SliderState(value = 3f, valueRange = 0f..8f) }
         val sliderAmplitudeState = remember { SliderState(value = 0.3f) }
         val sliderLengthState = remember { SliderState(value = 0.2f) }
         val sliderRefractionIndexState = remember {
@@ -146,6 +147,7 @@ object ShaderTestScreen {
                             refractionIndex = sliderRefractionIndexState.value,
                             aberrationIndex = sliderAberrationState.value,
                             curveType = glassType.curveType(sliderAmplitudeState.value, sliderLengthState.value),
+                            blurRadius = sliderBlurRadiusState.value,
                             tilt = glassType.motion,
                         )
                     }
@@ -173,6 +175,12 @@ object ShaderTestScreen {
                     Slider(
                         text = stringResource(R.string.shader_test_glass_refraction, sliderRefractionIndexState.value),
                         state = sliderRefractionIndexState
+                    )
+
+                    // Blur radius
+                    Slider(
+                        text = stringResource(R.string.shader_test_blur_radius, sliderBlurRadiusState.value),
+                        state = sliderBlurRadiusState
                     )
 
                     // Glass type

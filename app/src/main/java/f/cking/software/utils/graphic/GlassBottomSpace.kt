@@ -101,7 +101,7 @@ fun GlassBottomSpace(
             modifier = Modifier
                 .fillMaxWidth()
                 .letIf(isRenderEffectSupported && navbarHeightPx != null) {
-                    it.glassBottom(heightPx = navbarHeightPx!!)
+                    it.glassBottom(heightPx = navbarHeightPx!!, blurRadius = blur)
                 }
         ) {
             globalContent(PaddingValues(bottom = navbarHeightPx?.dp ?: 0.dp))
@@ -149,6 +149,7 @@ fun Modifier.glassBottom(
     heightPx: Float,
     curveType: GlassShader.CurveType = GlassShader.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
+    blurRadius: Float = 0f,
 ): Modifier = composed {
 
     val contentSize = remember { mutableStateOf(Size(0.0f, 0.0f)) }
@@ -168,6 +169,7 @@ fun Modifier.glassBottom(
                 curveType = curveType,
                 elevationPx = elevationPx,
                 material = RefractionMaterial.GLASS,
+                blurRadius = blurRadius,
                 tilt = Tilt.Motion(0.04f, 0.015f),
             )
         )
