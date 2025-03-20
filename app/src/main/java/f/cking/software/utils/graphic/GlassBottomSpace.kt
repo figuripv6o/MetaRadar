@@ -42,11 +42,14 @@ import f.cking.software.utils.graphic.glass.Tilt
 import f.cking.software.utils.graphic.glass.glassPanel
 import kotlin.math.max
 
+data object GlassBottomSpaceDefaults {
+    const val BLUR = 4f
+}
+
 @Composable
 fun GlassBottomNavBar(
     modifier: Modifier = Modifier,
-    blur: Float = 3f,
-    glassCurveSizeDp: Float = 3f,
+    blur: Float = GlassBottomSpaceDefaults.BLUR,
     fallbackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     overlayColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f),
     content: @Composable (bottomPadding: PaddingValues) -> Unit,
@@ -65,7 +68,7 @@ fun GlassBottomNavBar(
 @Composable
 fun GlassSystemNavbar(
     modifier: Modifier = Modifier,
-    blur: Float = 3f,
+    blur: Float = GlassBottomSpaceDefaults.BLUR,
     fallbackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     overlayColor: Color = Color.Transparent,
     content: @Composable (bottomPadding: PaddingValues) -> Unit,
@@ -86,7 +89,7 @@ fun GlassSystemNavbar(
 fun GlassBottomSpace(
     modifier: Modifier = Modifier,
     height: Dp? = null,
-    blur: Float = 3f,
+    blur: Float = GlassBottomSpaceDefaults.BLUR,
     zIndex: Float = 1f,
     fallbackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     overlayColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f),
@@ -149,7 +152,7 @@ fun Modifier.glassBottom(
     heightPx: Float,
     curveType: GlassShader.CurveType = GlassShader.CurveType.Mod,
     elevationPx: Float = LocalContext.current.dpToPx(8f).toFloat(),
-    blurRadius: Float = 0f,
+    blurRadius: Float = GlassBottomSpaceDefaults.BLUR,
 ): Modifier = composed {
 
     val contentSize = remember { mutableStateOf(Size(0.0f, 0.0f)) }
