@@ -299,6 +299,7 @@
     <string name="shader_test_panel_size" translatable="false">Glass scale: %d\%%</string>
     <string name="shader_test_glass_aberration" translatable="false">Aberration index: %.2f</string>
     <string name="shader_test_glass_refraction" translatable="false">Refraction index: %.2f</string>
+    <string name="shader_test_blur_radius" translatable="false">Blur radius: %.2f</string>
     <string name="shader_test_glass_type" translatable="false">Glass type</string>
     <string name="shader_test_glass_type_sin" translatable="false">Curved</string>
     <string name="shader_test_glass_type_mod" translatable="false">Fluted</string>
