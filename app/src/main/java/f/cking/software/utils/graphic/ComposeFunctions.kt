@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -75,6 +76,7 @@ import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import f.cking.software.R
 import f.cking.software.domain.model.DeviceData
+import f.cking.software.domain.model.ExtendedAddressInfo
 import f.cking.software.dpToPx
 import f.cking.software.pxToDp
 import f.cking.software.toHexString
@@ -295,10 +297,7 @@ fun DeviceListItem(
                 Text(text = airdrop.contacts.joinToString { "0x${it.sha256.toHexString().uppercase()}" })
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = device.address,
-                fontWeight = FontWeight.Light,
-            )
+            ExtendedAddressView(device.extendedAddressInfo())
             Spacer(modifier = Modifier.height(4.dp))
 
             val updateStr = if (showLastUpdate) {
@@ -319,6 +318,89 @@ fun DeviceListItem(
             )
         }
     }
+}
+
+@Composable
+fun ExtendedAddressView(
+    extendedAddressInfo: ExtendedAddressInfo,
+) {
+
+    Row {
+        Text(
+            text = extendedAddressInfo.address,
+            fontWeight = FontWeight.Light,
+        )
+        val chip = extendedAddressInfo.type.toChip()
+        if (chip != null) {
+
+            val dialog = infoDialog(
+                title = stringResource(id = chip.descriptionRes),
+                content = stringResource(id = R.string.address_private_disclamer)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+            val color = chip.color.invoke()
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(color.copy(alpha = 0.2f))
+                    .clickable { dialog.show() }
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = chip.titleRes),
+                    color = color,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Icon(
+                    modifier = Modifier
+                        .size(12.dp),
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = stringResource(R.string.app_info_title),
+                    tint = color
+                )
+            }
+        }
+    }
+}
+
+private fun ExtendedAddressInfo.BleAddressType.toChip(): ExtendedAddressInfoChip? {
+    return when (this) {
+        ExtendedAddressInfo.BleAddressType.PUBLIC -> ExtendedAddressInfoChip.PUBLIC
+        ExtendedAddressInfo.BleAddressType.STATIC_RANDOM -> ExtendedAddressInfoChip.RANDOM
+        ExtendedAddressInfo.BleAddressType.NON_RESOLVABLE_PRIVATE -> ExtendedAddressInfoChip.NON_RESOLVABLE
+        ExtendedAddressInfo.BleAddressType.RESOLVABLE_PRIVATE -> ExtendedAddressInfoChip.RESOLVABLE
+        ExtendedAddressInfo.BleAddressType.INVALID -> null
+    }
+}
+
+private enum class ExtendedAddressInfoChip(
+    val titleRes: Int,
+    val descriptionRes: Int,
+    val color: @Composable () -> Color,
+) {
+    PUBLIC(
+        titleRes = R.string.address_type_public_tag,
+        descriptionRes = R.string.address_type_public_description,
+        color = { colorResource(R.color.address_tag_stp) },
+    ),
+    RANDOM(
+        titleRes = R.string.address_type_random_static_tag,
+        descriptionRes = R.string.address_type_random_static_description,
+        color = { colorResource(R.color.address_tag_rst) },
+    ),
+    NON_RESOLVABLE(
+        titleRes = R.string.address_type_non_resolvable_tag,
+        descriptionRes = R.string.address_type_non_resolvable_description,
+        color = { colorResource(R.color.address_tag_nrp) },
+    ),
+    RESOLVABLE(
+        titleRes = R.string.address_type_resolvable_private_tag,
+        descriptionRes = R.string.address_type_resolvable_private_description,
+        color = { colorResource(R.color.address_tag_rpa) },
+    ),
 }
 
 @Composable

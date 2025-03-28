@@ -2,6 +2,7 @@ package f.cking.software.domain.model
 
 import android.content.Context
 import f.cking.software.dateTimeStringFormatLocalized
+import f.cking.software.domain.interactor.BuildExtendedAddressInfoInteractor
 import f.cking.software.getTimePeriodStr
 import java.time.format.FormatStyle
 
@@ -18,6 +19,10 @@ data class DeviceData(
     val lastFollowingDetectionTimeMs: Long?,
     val rssi: Int?,
 ) {
+
+    fun knownLifetime(): Long {
+        return lastDetectTimeMs - firstDetectTimeMs
+    }
 
     fun buildDisplayName(): String {
         return if (!customName.isNullOrBlank()) customName else name ?: address
@@ -41,6 +46,10 @@ data class DeviceData(
 
     fun hasBeenSeenTimeAgo(): Long {
         return System.currentTimeMillis() - lastDetectTimeMs
+    }
+
+    fun extendedAddressInfo(): ExtendedAddressInfo {
+        return BuildExtendedAddressInfoInteractor.execute(address, knownLifetime(), manufacturerInfo)
     }
 
     fun distance(): Float? {
