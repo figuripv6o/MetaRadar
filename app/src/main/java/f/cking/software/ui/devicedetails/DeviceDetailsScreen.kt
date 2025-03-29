@@ -72,6 +72,7 @@ import f.cking.software.frameRate
 import f.cking.software.ui.AsyncBatchProcessor
 import f.cking.software.ui.map.MapView
 import f.cking.software.ui.tagdialog.TagDialog
+import f.cking.software.utils.graphic.DevicePairedIcon
 import f.cking.software.utils.graphic.ExtendedAddressView
 import f.cking.software.utils.graphic.GlassSystemNavbar
 import f.cking.software.utils.graphic.ListItem
@@ -259,11 +260,15 @@ object DeviceDetailsScreen {
                         .padding(horizontal = 16.dp)
                 ) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = deviceData.buildDisplayName(),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = deviceData.buildDisplayName(),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        DevicePairedIcon(deviceData.isPaired, extended = true)
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_name), fontWeight = FontWeight.Bold)

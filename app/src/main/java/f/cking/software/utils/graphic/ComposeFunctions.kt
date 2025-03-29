@@ -163,7 +163,7 @@ fun rememberTimeDialog(
 @Composable
 fun infoDialog(
     title: String,
-    content: String,
+    content: String?,
 ): MaterialDialogState {
     val dialogState = rememberMaterialDialogState()
     ThemedDialog(
@@ -177,8 +177,10 @@ fun infoDialog(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = title, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = content)
+            if (!content.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = content)
+            }
         }
     }
     return dialogState
@@ -266,12 +268,13 @@ fun DeviceListItem(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(
-                    modifier = Modifier.weight(1f),
                     text = device.name ?: stringResource(R.string.not_applicable),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                DevicePairedIcon(device.isPaired)
+                Spacer(modifier = Modifier.weight(1f))
                 if (showSignalData) {
                     Spacer(modifier = Modifier.width(8.dp))
                     SignalData(rssi = device.rssi, distance = device.distance())
@@ -316,6 +319,39 @@ fun DeviceListItem(
                 text = updateStr,
                 fontWeight = FontWeight.Light,
             )
+        }
+    }
+}
+
+@Composable
+fun DevicePairedIcon(isPaired: Boolean, extended: Boolean = false) {
+    if (isPaired) {
+        val color = colorResource(R.color.blue_600)
+        val infoDialog = infoDialog(
+            title = stringResource(id = R.string.bluetooth_status_paired_description),
+            content = null,
+        )
+        Row(
+            modifier = Modifier.background(color.copy(0.2f), RoundedCornerShape(20.dp))
+                .clickable { infoDialog.show() },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                painter = painterResource(R.drawable.ic_ble_paired),
+                contentDescription = stringResource(R.string.bluetooth_status_paired),
+                tint = color
+            )
+            if (extended) {
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = stringResource(id = R.string.bluetooth_status_paired),
+                    color = color,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.width(4.dp))
+            }
+            Spacer(Modifier.width(4.dp))
         }
     }
 }

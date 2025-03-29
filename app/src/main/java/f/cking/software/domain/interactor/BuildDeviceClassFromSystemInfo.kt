@@ -10,7 +10,9 @@ object BuildDeviceClassFromSystemInfo {
     /**
      * Build a [DeviceClass] from the [android.bluetooth.BluetoothClass.Device].
      */
-    fun execute(systemClass: Int): DeviceClass {
+    fun execute(systemClass: Int?): DeviceClass {
+        if (systemClass == null) return DeviceClass.Unknown
+
         val major = systemClass and MAJOR_BIT_MASK
         return when (major) {
             BluetoothClass.Device.Major.PHONE -> {

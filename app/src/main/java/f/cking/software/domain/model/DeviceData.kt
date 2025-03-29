@@ -77,6 +77,9 @@ data class DeviceData(
             name = new.name,
             manufacturerInfo = new.manufacturerInfo,
             rssi = new.rssi,
+            systemAddressType = new.systemAddressType,
+            isPaired = new.isPaired,
+            deviceClass = new.deviceClass,
         )
     }
 }

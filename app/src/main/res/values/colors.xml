@@ -106,6 +106,7 @@
     <color name="green_600">#43A047</color>
     <color name="yellow_600">#FFB300</color>
     <color name="red_600">#F4511E</color>
+    <color name="blue_600">#1E88E5</color>
 
     <color name="address_tag_stp">@color/green_600</color>
     <color name="address_tag_rst">@color/yellow_600</color>

@@ -180,7 +180,7 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_12_13 = migration(12, 13) {
             it.execSQL("ALTER TABLE device ADD COLUMN system_address_type INTEGER DEFAULT NULL;")
             it.execSQL("ALTER TABLE device ADD COLUMN device_class INTEGER DEFAULT NULL;")
-            it.execSQL("ALTER TABLE device ADD COLUMN is_paired INTEGER DEFAULT 0;")
+            it.execSQL("ALTER TABLE device ADD COLUMN is_paired INTEGER NOT NULL DEFAULT 0;")
         }
 
         private fun migration(
