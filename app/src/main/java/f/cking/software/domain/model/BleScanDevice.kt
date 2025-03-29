@@ -9,4 +9,5 @@ class BleScanDevice(
     val addressType: Int?,
     val deviceClass: Int?,
     val isPaired: Boolean,
+    val serviceUuids: List<String>,
 )

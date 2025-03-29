@@ -2,6 +2,7 @@ package f.cking.software.domain.model
 
 import android.content.Context
 import f.cking.software.dateTimeStringFormatLocalized
+import f.cking.software.domain.interactor.BuildDeviceClassFromSystemInfo
 import f.cking.software.domain.interactor.BuildExtendedAddressInfoInteractor
 import f.cking.software.getTimePeriodStr
 import java.time.format.FormatStyle
@@ -21,7 +22,12 @@ data class DeviceData(
     val systemAddressType: Int?,
     val deviceClass: Int?,
     val isPaired: Boolean,
+    val servicesUuids: List<String>,
 ) {
+
+    val resolvedDeviceClass: DeviceClass by lazy {
+        BuildDeviceClassFromSystemInfo.execute(this)
+    }
 
     fun knownLifetime(): Long {
         return lastDetectTimeMs - firstDetectTimeMs
@@ -80,6 +86,7 @@ data class DeviceData(
             systemAddressType = new.systemAddressType,
             isPaired = new.isPaired,
             deviceClass = new.deviceClass,
+            servicesUuids = new.servicesUuids,
         )
     }
 }

@@ -278,14 +278,17 @@ fun DeviceListItem(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
+                    if (device.isPaired) {
+                        DevicePairedIcon(true)
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
                     Text(
+                        modifier = Modifier.weight(1f),
                         text = device.name ?: stringResource(R.string.not_applicable),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    DevicePairedIcon(device.isPaired)
-                    Spacer(modifier = Modifier.weight(1f))
                     if (showSignalData) {
                         Spacer(modifier = Modifier.width(8.dp))
                         SignalData(rssi = device.rssi, distance = device.distance())
@@ -374,7 +377,7 @@ fun DeviceTypeIcon(
     device: DeviceData,
     paddingDp: Dp = 16.dp
 ) {
-    val icon = GetIconForDeviceClass.getIcon(device)
+    val icon = remember(device) { GetIconForDeviceClass.getIcon(device) }
     val color = colorByHash(device.address.hashCode())
     Icon(
         modifier = modifier.background(color.copy(0.2f), CircleShape)

@@ -1,7 +1,6 @@
 package f.cking.software.utils.graphic
 
 import f.cking.software.R
-import f.cking.software.domain.interactor.BuildDeviceClassFromSystemInfo
 import f.cking.software.domain.model.DeviceClass
 import f.cking.software.domain.model.DeviceData
 
@@ -12,9 +11,8 @@ object GetIconForDeviceClass {
      */
     fun getIcon(device: DeviceData): Int {
         val manufacturer = device.manufacturerInfo
-        val deviceClass = BuildDeviceClassFromSystemInfo.execute(device.deviceClass)
 
-        return when (deviceClass) {
+        return when (device.resolvedDeviceClass) {
             is DeviceClass.Phone -> {
                 if (manufacturer?.isApple() == true) {
                     R.drawable.ic_phone_iphone
@@ -54,6 +52,8 @@ object GetIconForDeviceClass {
             is DeviceClass.Peripheral.Keyboard -> R.drawable.ic_keyboard
             is DeviceClass.Peripheral.Pointing -> R.drawable.ic_mouse
             is DeviceClass.Peripheral -> R.drawable.ic_joystick
+
+            is DeviceClass.Beacon -> R.drawable.ic_ibeacon
             else -> R.drawable.ic_question
         }
     }

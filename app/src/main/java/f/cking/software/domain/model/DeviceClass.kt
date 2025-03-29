@@ -70,4 +70,10 @@ sealed interface DeviceClass {
         data object Pointing : Peripheral
         data object KeyboardPointing : Peripheral
     }
+    sealed interface Beacon : DeviceClass {
+        data object AirTag : Beacon
+        data object IBeacon : Beacon
+        data object SmartTag : Beacon
+        data object Uncategorised : Beacon
+    }
 }

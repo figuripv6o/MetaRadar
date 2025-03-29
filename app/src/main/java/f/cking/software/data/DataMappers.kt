@@ -53,6 +53,7 @@ fun DeviceEntity.toDomain(appleAirDrop: AppleAirDrop?): DeviceData {
         systemAddressType = systemAddressType,
         deviceClass = deviceClass,
         isPaired = isPaired,
+        servicesUuids = serviceUuids,
     )
 }
 
@@ -73,6 +74,7 @@ fun DeviceData.toData(): DeviceEntity {
         systemAddressType = systemAddressType,
         deviceClass = deviceClass,
         isPaired = isPaired,
+        serviceUuids = servicesUuids,
     )
 }
 

@@ -2,6 +2,7 @@ package f.cking.software.domain.interactor
 
 import android.bluetooth.BluetoothClass
 import f.cking.software.domain.model.DeviceClass
+import f.cking.software.domain.model.DeviceData
 
 object BuildDeviceClassFromSystemInfo {
 
@@ -10,11 +11,13 @@ object BuildDeviceClassFromSystemInfo {
     /**
      * Build a [DeviceClass] from the [android.bluetooth.BluetoothClass.Device].
      */
-    fun execute(systemClass: Int?): DeviceClass {
+    fun execute(deviceData: DeviceData): DeviceClass {
+        val systemClass = deviceData.deviceClass
+
         if (systemClass == null) return DeviceClass.Unknown
 
         val major = systemClass and MAJOR_BIT_MASK
-        return when (major) {
+        val result = when (major) {
             BluetoothClass.Device.Major.PHONE -> {
                 when (systemClass) {
                     BluetoothClass.Device.PHONE_CELLULAR -> DeviceClass.Phone.Cellular
@@ -25,6 +28,7 @@ object BuildDeviceClassFromSystemInfo {
                     else -> DeviceClass.Phone.Uncategorised
                 }
             }
+
             BluetoothClass.Device.Major.COMPUTER -> {
                 when (systemClass) {
                     BluetoothClass.Device.COMPUTER_DESKTOP -> DeviceClass.Computer.Desktop
@@ -36,6 +40,7 @@ object BuildDeviceClassFromSystemInfo {
                     else -> DeviceClass.Computer.Uncategorised
                 }
             }
+
             BluetoothClass.Device.Major.AUDIO_VIDEO -> {
                 when (systemClass) {
                     BluetoothClass.Device.AUDIO_VIDEO_CAMCORDER -> DeviceClass.AudioVideo.Camcorder
@@ -58,6 +63,7 @@ object BuildDeviceClassFromSystemInfo {
                     else -> DeviceClass.AudioVideo.Uncategorised
                 }
             }
+
             BluetoothClass.Device.Major.WEARABLE -> {
                 when (systemClass) {
                     BluetoothClass.Device.WEARABLE_GLASSES -> DeviceClass.Wearable.Glasses
@@ -68,6 +74,7 @@ object BuildDeviceClassFromSystemInfo {
                     else -> DeviceClass.Wearable.Uncategorised
                 }
             }
+
             BluetoothClass.Device.Major.TOY -> {
                 when (systemClass) {
                     BluetoothClass.Device.TOY_CONTROLLER -> DeviceClass.Toy.Controller
@@ -78,6 +85,7 @@ object BuildDeviceClassFromSystemInfo {
                     else -> DeviceClass.Toy.Uncategorised
                 }
             }
+
             BluetoothClass.Device.Major.HEALTH -> {
                 when (systemClass) {
                     BluetoothClass.Device.HEALTH_BLOOD_PRESSURE -> DeviceClass.Health.BloodPressure
@@ -86,6 +94,7 @@ object BuildDeviceClassFromSystemInfo {
                     else -> DeviceClass.Health.Uncategorised
                 }
             }
+
             BluetoothClass.Device.Major.PERIPHERAL -> {
                 when (systemClass) {
                     BluetoothClass.Device.PERIPHERAL_KEYBOARD -> DeviceClass.Peripheral.Keyboard
@@ -97,5 +106,64 @@ object BuildDeviceClassFromSystemInfo {
 
             else -> DeviceClass.Unknown
         }
+
+        return if (result is DeviceClass.Unknown) {
+            val byUuid = getCatigoryByServiceUuid(deviceData)
+            when {
+                byUuid != DeviceClass.Unknown -> byUuid
+                deviceData.name.orEmpty().contains("phone", ignoreCase = true) -> DeviceClass.Phone.Smartphone
+                deviceData.name.orEmpty().contains("buds", ignoreCase = true) -> DeviceClass.AudioVideo.Headphones
+                checkIsTag(deviceData) -> DeviceClass.Beacon.SmartTag
+                else -> result
+            }
+        } else {
+            result
+        }
     }
+
+    private fun getCatigoryByServiceUuid(deviceData: DeviceData): DeviceClass {
+        val deviceServicesShorten = deviceData.servicesUuids.map { extract16BitUuid(it).orEmpty().lowercase() }
+
+        val matched: List<DeviceClass> = deviceServicesShorten.mapNotNull { shortenService ->
+            SERVICE_UUID_TO_TYPE[shortenService]
+        }
+
+        return matched.firstOrNull() ?: DeviceClass.Unknown
+    }
+
+    private fun checkIsTag(deviceData: DeviceData): Boolean {
+        return KNOWN_TAG_NAMES.any { deviceData.name.orEmpty().contains(it, ignoreCase = true) }
+    }
+
+    private fun extract16BitUuid(fullUuid: String): String? {
+        val regex = Regex("^0000([0-9a-fA-F]{4})-0000-1000-8000-00805f9b34fb$")
+        return regex.find(fullUuid)?.groupValues?.get(1)
+    }
+
+    private val SERVICE_UUID_TO_TYPE = mapOf(
+        // Tracking Tags
+        "fe2c" to DeviceClass.Beacon.AirTag, // apple find my network
+        "feed" to DeviceClass.Beacon.Uncategorised, // tile tracker
+        "fd50" to DeviceClass.Beacon.IBeacon, // samsung smart tag
+        "181a" to DeviceClass.Beacon.Uncategorised,
+        "fe9a" to DeviceClass.Beacon.Uncategorised,
+        "1843" to DeviceClass.AudioVideo.Uncategorised,// audio input control service
+        "180f" to DeviceClass.AudioVideo.Uncategorised,// "Battery Service (common in wireless earbuds and headphones)",
+        "1844" to DeviceClass.AudioVideo.Uncategorised,// "Battery Service (common in wireless earbuds and headphones)",
+        "180d" to DeviceClass.Health.HeartPulseRate,// "Heart Rate Monitor (wearable, fitness tracker)",
+        "180c" to DeviceClass.Health.Uncategorised,// "Cycling Speed and Cadence Sensor",
+        "1816" to DeviceClass.Health.Uncategorised,//"Cycling Power Meter",
+        "181f" to DeviceClass.Health.Glucose,//"Continuous Glucose Monitor",
+        "1810" to DeviceClass.Health.BloodPressure,//"Blood Pressure Monitor",
+        "1809" to DeviceClass.Health.Thermometer,//"Thermometer",
+        "181c" to DeviceClass.Health.PulseOximeter,//"Blood Oxygen Sensor (Pulse Oximeter)",
+        "1812" to DeviceClass.Peripheral.Keyboard,//"Human Interface Device (HID - Keyboard, Mouse, Gamepad)",
+        "1824" to DeviceClass.Peripheral.Uncategorised,//"Transport Discovery (Smart Remote, Controller)",
+    )
+
+    private val KNOWN_TAG_NAMES = listOf(
+        "airtag",
+        "ibeacon",
+        "smart tag"
+    )
 }

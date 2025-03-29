@@ -248,6 +248,7 @@
     <string name="sort_by_title">Sort by</string>
     <string name="sort_type_standart">Default</string>
     <string name="sort_type_by_distance">Distance</string>
+    <string name="sort_type_by_device_type">Device type</string>
     <string name="active_mode_show_all">Show all %s online devices</string>
     <string name="device_is_online">Online</string>
 

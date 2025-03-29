@@ -28,6 +28,7 @@ class BuildDeviceFromScanDataInteractor(
             systemAddressType = scanData.addressType,
             deviceClass = scanData.deviceClass,
             isPaired = scanData.isPaired,
+            servicesUuids = scanData.serviceUuids,
         )
     }
 }

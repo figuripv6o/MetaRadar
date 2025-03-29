@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -73,6 +74,7 @@ import f.cking.software.ui.AsyncBatchProcessor
 import f.cking.software.ui.map.MapView
 import f.cking.software.ui.tagdialog.TagDialog
 import f.cking.software.utils.graphic.DevicePairedIcon
+import f.cking.software.utils.graphic.DeviceTypeIcon
 import f.cking.software.utils.graphic.ExtendedAddressView
 import f.cking.software.utils.graphic.GlassSystemNavbar
 import f.cking.software.utils.graphic.ListItem
@@ -261,6 +263,8 @@ object DeviceDetailsScreen {
                 ) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        DeviceTypeIcon(modifier = Modifier.size(42.dp), device = deviceData, paddingDp = 4.dp)
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             text = deviceData.buildDisplayName(),
                             fontSize = 20.sp,

@@ -44,7 +44,7 @@ import java.io.File
         AutoMigration(from = 11, to = 12),
     ],
     exportSchema = true,
-    version = 13,
+    version = 14,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -117,6 +117,7 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_6_7,
                     MIGRATION_8_9,
                     MIGRATION_12_13,
+                    MIGRATION_13_14,
                 )
                 .build()
         }
@@ -181,6 +182,10 @@ abstract class AppDatabase : RoomDatabase() {
             it.execSQL("ALTER TABLE device ADD COLUMN system_address_type INTEGER DEFAULT NULL;")
             it.execSQL("ALTER TABLE device ADD COLUMN device_class INTEGER DEFAULT NULL;")
             it.execSQL("ALTER TABLE device ADD COLUMN is_paired INTEGER NOT NULL DEFAULT 0;")
+        }
+
+        private val MIGRATION_13_14 = migration(13, 14) {
+            it.execSQL("ALTER TABLE device ADD COLUMN service_uuids TEXT NOT NULL DEFAULT '';")
         }
 
         private fun migration(

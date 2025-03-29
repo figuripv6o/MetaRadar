@@ -21,4 +21,5 @@ data class DeviceEntity(
     @ColumnInfo(name = "system_address_type") val systemAddressType: Int? = null,
     @ColumnInfo(name = "device_class") val deviceClass: Int? = null,
     @ColumnInfo(name = "is_paired") val isPaired: Boolean = false,
+    @ColumnInfo(name = "service_uuids", defaultValue = "") val serviceUuids: List<String>,
 )
