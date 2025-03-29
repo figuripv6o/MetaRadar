@@ -17,7 +17,7 @@ object BuildDeviceClassFromSystemInfo {
         if (systemClass == null) return DeviceClass.Unknown
 
         val major = systemClass and MAJOR_BIT_MASK
-        val result = when (major) {
+        var result = when (major) {
             BluetoothClass.Device.Major.PHONE -> {
                 when (systemClass) {
                     BluetoothClass.Device.PHONE_CELLULAR -> DeviceClass.Phone.Cellular
@@ -107,21 +107,24 @@ object BuildDeviceClassFromSystemInfo {
             else -> DeviceClass.Unknown
         }
 
-        return if (result is DeviceClass.Unknown) {
-            val byUuid = getCatigoryByServiceUuid(deviceData)
-            when {
-                byUuid != DeviceClass.Unknown -> byUuid
-                deviceData.name.orEmpty().contains("phone", ignoreCase = true) -> DeviceClass.Phone.Smartphone
-                deviceData.name.orEmpty().contains("buds", ignoreCase = true) -> DeviceClass.AudioVideo.Headphones
-                checkIsTag(deviceData) -> DeviceClass.Beacon.SmartTag
-                else -> result
-            }
-        } else {
-            result
+        if (result is DeviceClass.Unknown) {
+            result = getCategoryByServiceUuid(deviceData)
         }
+
+        if (result is DeviceClass.Unknown) {
+            result = getCategoryByDeviceName(deviceData)
+        }
+
+        return result
     }
 
-    private fun getCatigoryByServiceUuid(deviceData: DeviceData): DeviceClass {
+    private fun getCategoryByDeviceName(deviceData: DeviceData): DeviceClass {
+        return NAME_SUBSTRING_TO_TYPE.entries.firstOrNull { (substring, _) ->
+            deviceData.name.orEmpty().contains(substring, ignoreCase = true)
+        }?.value ?: DeviceClass.Unknown
+    }
+
+    private fun getCategoryByServiceUuid(deviceData: DeviceData): DeviceClass {
         val deviceServicesShorten = deviceData.servicesUuids.map { extract16BitUuid(it).orEmpty().lowercase() }
 
         val matched: List<DeviceClass> = deviceServicesShorten.mapNotNull { shortenService ->
@@ -129,10 +132,6 @@ object BuildDeviceClassFromSystemInfo {
         }
 
         return matched.firstOrNull() ?: DeviceClass.Unknown
-    }
-
-    private fun checkIsTag(deviceData: DeviceData): Boolean {
-        return KNOWN_TAG_NAMES.any { deviceData.name.orEmpty().contains(it, ignoreCase = true) }
     }
 
     private fun extract16BitUuid(fullUuid: String): String? {
@@ -161,9 +160,20 @@ object BuildDeviceClassFromSystemInfo {
         "1824" to DeviceClass.Peripheral.Uncategorised,//"Transport Discovery (Smart Remote, Controller)",
     )
 
-    private val KNOWN_TAG_NAMES = listOf(
-        "airtag",
-        "ibeacon",
-        "smart tag"
+    private val NAME_SUBSTRING_TO_TYPE = mapOf(
+        "buds" to DeviceClass.AudioVideo.Headphones,
+        "phone" to DeviceClass.Phone.Smartphone,
+        "watch" to DeviceClass.Wearable.WristWatch,
+        "STANMORE" to DeviceClass.AudioVideo.Loudspeaker,
+        "MONITOR II" to DeviceClass.AudioVideo.Headphones,
+        "SOUNDLINK" to DeviceClass.AudioVideo.PortableAudio,
+        "Xbox" to DeviceClass.AudioVideo.VideoGamingToy,
+        "airtag" to DeviceClass.Beacon.AirTag,
+        "ibeacon" to DeviceClass.Beacon.IBeacon,
+        "smart tag" to DeviceClass.Beacon.Uncategorised,
+        "\" Odyssey" to DeviceClass.AudioVideo.VideoMonitor,
+        "meta quest" to DeviceClass.Wearable.Glasses,
+        " TV" to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
+        "TV " to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
     )
 }

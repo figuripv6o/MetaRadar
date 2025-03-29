@@ -2,6 +2,8 @@ package f.cking.software.ui.devicedetails
 
 import android.graphics.Paint
 import android.view.MotionEvent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -48,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,6 +59,7 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -287,6 +291,9 @@ object DeviceDetailsScreen {
                     Text(text = deviceData.manufacturerInfo?.name ?: stringResource(R.string.not_applicable))
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    Services(deviceData)
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Row {
                         Text(
                             text = stringResource(R.string.device_details_detect_count),
@@ -310,7 +317,41 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    fun Tags(
+    private fun Services(device: DeviceData) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            var expanded by remember { mutableStateOf(false) }
+            val rotation by animateFloatAsState(180f * if (expanded) 1 else 0)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(vertical = 8.dp)
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = pluralStringResource(R.plurals.services_discovered, device.servicesUuids.size, device.servicesUuids.size),
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    modifier = Modifier.rotate(rotation),
+                    painter = painterResource(R.drawable.ic_drop_up),
+                    contentDescription = null,
+                )
+            }
+
+            AnimatedVisibility(expanded) {
+                device.servicesUuids.forEach { service ->
+                    Text(modifier = Modifier.padding(8.dp), text = service)
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun Tags(
         deviceData: DeviceData,
         viewModel: DeviceDetailsViewModel,
     ) {
@@ -332,7 +373,7 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    fun Tag(
+    private fun Tag(
         deviceData: DeviceData,
         name: String,
         viewModel: DeviceDetailsViewModel,
@@ -362,7 +403,7 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    fun AddTag(
+    private fun AddTag(
         deviceData: DeviceData,
         viewModel: DeviceDetailsViewModel,
     ) {
@@ -405,7 +446,8 @@ object DeviceDetailsScreen {
                         dialog.hide()
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .clickable(onClick = onClick),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -452,7 +494,8 @@ object DeviceDetailsScreen {
                         dialog.hide()
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .clickable(onClick = onClick),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -629,9 +672,9 @@ object DeviceDetailsScreen {
                     }
                 })
             },
-            onUpdate = { map -> mapView = map  }
+            onUpdate = { map -> mapView = map }
         )
-        val mapColorScheme = remember { MapColorScheme(colorScheme.scrim.copy(alpha = 0.6f,), Color.Red) }
+        val mapColorScheme = remember { MapColorScheme(colorScheme.scrim.copy(alpha = 0.6f), Color.Red) }
 
         LaunchedEffect(mapView, viewModel.pointsState, viewModel.pointsStyle) {
             if (mapView != null) {
@@ -671,6 +714,7 @@ object DeviceDetailsScreen {
             DeviceDetailsViewModel.PointsStyle.MARKERS -> {
                 batchProcessor.process(mapUpdate.points, mapUpdate.map)
             }
+
             DeviceDetailsViewModel.PointsStyle.PATH -> {
                 batchProcessor.cancel()
                 mapUpdate.map.overlays.clear()

@@ -251,6 +251,11 @@
     <string name="sort_type_by_device_type">Device type</string>
     <string name="active_mode_show_all">Show all %s online devices</string>
     <string name="device_is_online">Online</string>
+    <plurals name="services_discovered">
+        <item quantity="zero">No services discovered</item>
+        <item quantity="one">%d service discovered</item>
+        <item quantity="other">%d services discovered</item>
+    </plurals>
 
     <!-- Main Screen -->
     <string name="menu_device_list">Device list</string>
