@@ -35,6 +35,7 @@ import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Navigator
 import f.cking.software.utils.navigation.RouterImpl
 import org.koin.android.ext.android.inject
+import org.koin.compose.KoinContext
 import org.osmdroid.config.Configuration
 
 class MainActivity : AppCompatActivity() {
@@ -69,21 +70,23 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val focusManager = LocalFocusManager.current
             val colors = themeColorScheme()
-            MaterialTheme(
-                colorScheme = colors,
-                typography = Typography(
-                    bodyMedium = MaterialTheme.typography.bodyMedium.copy(color = colors.onSurface),
-                    bodyLarge = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface),
-                    bodySmall = MaterialTheme.typography.bodySmall.copy(color = colors.onSurface),
-                )
-            ) {
-                val stack = viewModel.navigator.stack
-                if (stack.isEmpty()) {
-                    finish()
-                } else {
-                    focusManager.clearFocus(true)
-                    stack.forEach { screen ->
-                        screen()
+            KoinContext {
+                MaterialTheme(
+                    colorScheme = colors,
+                    typography = Typography(
+                        bodyMedium = MaterialTheme.typography.bodyMedium.copy(color = colors.onSurface),
+                        bodyLarge = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface),
+                        bodySmall = MaterialTheme.typography.bodySmall.copy(color = colors.onSurface),
+                    )
+                ) {
+                    val stack = viewModel.navigator.stack
+                    if (stack.isEmpty()) {
+                        finish()
+                    } else {
+                        focusManager.clearFocus(true)
+                        stack.forEach { screen ->
+                            screen()
+                        }
                     }
                 }
             }

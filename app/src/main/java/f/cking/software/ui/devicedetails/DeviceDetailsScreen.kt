@@ -114,8 +114,7 @@ object DeviceDetailsScreen {
     @Composable
     fun Screen(
         address: String,
-        key: String,
-        viewModel: DeviceDetailsViewModel = koinViewModel(key = key) { parametersOf(address) }
+        viewModel: DeviceDetailsViewModel = koinViewModel(key = address) { parametersOf(address) }
     ) {
 
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()

@@ -32,6 +32,7 @@ import f.cking.software.toHexString
 import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -66,6 +67,7 @@ class DeviceDetailsViewModel(
     var rawData: List<Pair<String, String>> by mutableStateOf(listOf())
     var services: Set<ServiceData> by mutableStateOf(emptySet())
     var connectionStatus: ConnectionStatus by mutableStateOf(ConnectionStatus.DISCONNECTED)
+    private var connectionJob: Job? = null
 
     sealed class ConnectionStatus(@StringRes val statusRes: Int) {
         data class CONNECTED(val gatt: BluetoothGatt) : ConnectionStatus(R.string.device_details_status_connected)
@@ -100,8 +102,14 @@ class DeviceDetailsViewModel(
         }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        connectionJob?.cancel()
+    }
+
     fun establishConnection() {
-        viewModelScope.launch {
+        connectionJob?.cancel()
+        connectionJob = viewModelScope.launch {
             bleScannerHelper.connectToDevice(address)
                 .onStart { connectionStatus = ConnectionStatus.CONNECTING }
                 .catch { e ->
