@@ -222,7 +222,7 @@ object DeviceDetailsScreen {
             Spacer(modifier = Modifier.height(16.dp))
             Tags(deviceData = deviceData, viewModel = viewModel)
             Spacer(modifier = Modifier.height(16.dp))
-            DeviceContent(modifier = Modifier, deviceData = deviceData)
+            DeviceContent(modifier = Modifier, deviceData = deviceData, viewModel = viewModel)
             Spacer(modifier = Modifier.height(16.dp))
             SystemNavbarSpacer()
         }
@@ -253,6 +253,7 @@ object DeviceDetailsScreen {
     private fun DeviceContent(
         modifier: Modifier = Modifier,
         deviceData: DeviceData,
+        viewModel: DeviceDetailsViewModel,
     ) {
         RoundedBox(
             modifier = modifier
@@ -294,6 +295,9 @@ object DeviceDetailsScreen {
                     Services(deviceData)
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    RawData(viewModel.rawData)
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Row {
                         Text(
                             text = stringResource(R.string.device_details_detect_count),
@@ -318,6 +322,28 @@ object DeviceDetailsScreen {
 
     @Composable
     private fun Services(device: DeviceData) {
+        ExpandableLine(pluralStringResource(R.plurals.services_discovered, device.servicesUuids.size, device.servicesUuids.size)) {
+            device.servicesUuids.forEach { service ->
+                Text(modifier = Modifier.padding(8.dp), text = service)
+            }
+        }
+    }
+
+    @Composable
+    private fun RawData(rawData: List<Pair<String, String>>) {
+        ExpandableLine(pluralStringResource(R.plurals.device_details_raw_data, rawData.size, rawData.size)) {
+            rawData.forEach { (key, value) ->
+                Row {
+                    Text(modifier = Modifier.padding(8.dp), text = "0x$key")
+                    Spacer(Modifier.width(8.dp))
+                    Text(modifier = Modifier.padding(8.dp), text = "0x$value")
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun ExpandableLine(title: String, content: @Composable () -> Unit) {
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -330,8 +356,7 @@ object DeviceDetailsScreen {
                     .padding(vertical = 8.dp)
             ) {
                 Text(
-                    modifier = Modifier.weight(1f),
-                    text = pluralStringResource(R.plurals.services_discovered, device.servicesUuids.size, device.servicesUuids.size),
+                    text = title,
                     fontWeight = FontWeight.Bold,
                 )
                 Spacer(Modifier.width(8.dp))
@@ -343,8 +368,8 @@ object DeviceDetailsScreen {
             }
 
             AnimatedVisibility(expanded) {
-                device.servicesUuids.forEach { service ->
-                    Text(modifier = Modifier.padding(8.dp), text = service)
+                Column {
+                    content.invoke()
                 }
             }
         }

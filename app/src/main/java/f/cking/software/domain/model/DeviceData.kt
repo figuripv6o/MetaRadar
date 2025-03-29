@@ -23,6 +23,7 @@ data class DeviceData(
     val deviceClass: Int?,
     val isPaired: Boolean,
     val servicesUuids: List<String>,
+    val rowDataEncoded: String?,
 ) {
 
     val resolvedDeviceClass: DeviceClass by lazy {
@@ -87,6 +88,7 @@ data class DeviceData(
             isPaired = new.isPaired,
             deviceClass = new.deviceClass,
             servicesUuids = new.servicesUuids,
+            rowDataEncoded = new.rowDataEncoded,
         )
     }
 }

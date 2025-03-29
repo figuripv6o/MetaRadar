@@ -44,7 +44,7 @@ import java.io.File
         AutoMigration(from = 11, to = 12),
     ],
     exportSchema = true,
-    version = 14,
+    version = 15,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -118,6 +118,7 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_8_9,
                     MIGRATION_12_13,
                     MIGRATION_13_14,
+                    MIGRATION_14_15,
                 )
                 .build()
         }
@@ -186,6 +187,10 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_13_14 = migration(13, 14) {
             it.execSQL("ALTER TABLE device ADD COLUMN service_uuids TEXT NOT NULL DEFAULT '';")
+        }
+
+        private val MIGRATION_14_15 = migration(14, 15) {
+            it.execSQL("ALTER TABLE device ADD COLUMN row_data_encoded TEXT DEFAULT NULL;")
         }
 
         private fun migration(

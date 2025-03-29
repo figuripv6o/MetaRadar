@@ -256,6 +256,11 @@
         <item quantity="one">%d service discovered</item>
         <item quantity="other">%d services discovered</item>
     </plurals>
+    <plurals name="device_details_raw_data">
+        <item quantity="zero">No raw data fragments</item>
+        <item quantity="one">%d raw data fragment</item>
+        <item quantity="other">%d raw data fragments</item>
+    </plurals>
 
     <!-- Main Screen -->
     <string name="menu_device_list">Device list</string>

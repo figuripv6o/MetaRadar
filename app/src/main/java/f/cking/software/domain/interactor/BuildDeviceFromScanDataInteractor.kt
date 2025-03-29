@@ -2,6 +2,7 @@ package f.cking.software.domain.interactor
 
 import f.cking.software.domain.model.BleScanDevice
 import f.cking.software.domain.model.DeviceData
+import f.cking.software.toBase64
 
 class BuildDeviceFromScanDataInteractor(
     private val getManufacturerInfoFromRawBleInteractor: GetManufacturerInfoFromRawBleInteractor,
@@ -29,6 +30,7 @@ class BuildDeviceFromScanDataInteractor(
             deviceClass = scanData.deviceClass,
             isPaired = scanData.isPaired,
             servicesUuids = scanData.serviceUuids,
+            rowDataEncoded = scanData.scanRecordRaw?.toBase64(),
         )
     }
 }

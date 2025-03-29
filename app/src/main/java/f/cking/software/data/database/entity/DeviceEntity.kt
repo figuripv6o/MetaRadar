@@ -22,4 +22,5 @@ data class DeviceEntity(
     @ColumnInfo(name = "device_class") val deviceClass: Int? = null,
     @ColumnInfo(name = "is_paired") val isPaired: Boolean = false,
     @ColumnInfo(name = "service_uuids", defaultValue = "") val serviceUuids: List<String>,
+    @ColumnInfo(name = "row_data_encoded") val rowDataEncoded: String? = null,
 )

@@ -14,11 +14,14 @@ import f.cking.software.data.repo.DevicesRepository
 import f.cking.software.data.repo.LocationRepository
 import f.cking.software.domain.interactor.AddTagToDeviceInteractor
 import f.cking.software.domain.interactor.ChangeFavoriteInteractor
+import f.cking.software.domain.interactor.GetBleRecordFramesFromRawInteractor
 import f.cking.software.domain.interactor.RemoveTagFromDeviceInteractor
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.LocationModel
 import f.cking.software.domain.toDomain
+import f.cking.software.fromBase64
 import f.cking.software.service.BgScanService
+import f.cking.software.toHexString
 import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,6 +41,7 @@ class DeviceDetailsViewModel(
     private val addTagToDeviceInteractor: AddTagToDeviceInteractor,
     private val removeTagFromDeviceInteractor: RemoveTagFromDeviceInteractor,
     private val changeFavoriteInteractor: ChangeFavoriteInteractor,
+    private val getBleRecordFramesFromRawInteractor: GetBleRecordFramesFromRawInteractor,
 ) : ViewModel() {
 
     var deviceState: DeviceData? by mutableStateOf(null)
@@ -47,9 +51,9 @@ class DeviceDetailsViewModel(
     var markersInLoadingState by mutableStateOf(false)
     var onlineStatusData: OnlineStatus? by mutableStateOf(null)
     var pointsStyle: PointsStyle by mutableStateOf(DEFAULT_POINTS_STYLE)
+    var rawData: List<Pair<String, String>> by mutableStateOf(listOf())
 
     private var currentLocation: LocationModel? = null
-
 
     init {
         viewModelScope.launch {
@@ -57,6 +61,13 @@ class DeviceDetailsViewModel(
             loadDevice(address)
             observeOnlineStatus()
             refreshLocationHistory(address, autotunePeriod = true)
+        }
+    }
+
+    private fun loadRawData(raw: ByteArray) {
+        val frames = getBleRecordFramesFromRawInteractor.execute(raw)
+        rawData = frames.map {
+            it.type.toHexString().uppercase() to it.data.toHexString().uppercase()
         }
     }
 
@@ -93,6 +104,7 @@ class DeviceDetailsViewModel(
         if (device == null) {
             back()
         } else {
+            device.rowDataEncoded?.fromBase64()?.let { loadRawData(it) }
             deviceState = device
         }
     }
