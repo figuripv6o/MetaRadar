@@ -43,6 +43,10 @@ data class RadarProfile(
         data class IsFavorite(val favorite: Boolean) : Filter()
 
         @Serializable
+        @SerialName("is_paired")
+        data class IsPaired(val isPaired: Boolean, ) : Filter()
+
+        @Serializable
         @SerialName("min_lost_time")
         data class MinLostTime(val minLostTime: Long) : Filter()
 

@@ -1,8 +1,12 @@
 package f.cking.software.ui.devicedetails
 
+import android.bluetooth.BluetoothGattCharacteristic
 import android.graphics.Paint
 import android.view.MotionEvent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,6 +62,7 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -72,6 +80,9 @@ import f.cking.software.frameRate
 import f.cking.software.ui.AsyncBatchProcessor
 import f.cking.software.ui.map.MapView
 import f.cking.software.ui.tagdialog.TagDialog
+import f.cking.software.utils.graphic.DevicePairedIcon
+import f.cking.software.utils.graphic.DeviceTypeIcon
+import f.cking.software.utils.graphic.ExtendedAddressView
 import f.cking.software.utils.graphic.GlassSystemNavbar
 import f.cking.software.utils.graphic.ListItem
 import f.cking.software.utils.graphic.RadarIcon
@@ -101,8 +112,11 @@ import java.time.format.FormatStyle
 object DeviceDetailsScreen {
 
     @Composable
-    fun Screen(address: String, key: String) {
-        val viewModel: DeviceDetailsViewModel = koinViewModel(key = key) { parametersOf(address) }
+    fun Screen(
+        address: String,
+        viewModel: DeviceDetailsViewModel = koinViewModel(key = address) { parametersOf(address) }
+    ) {
+
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
         Scaffold(
             modifier = Modifier
@@ -214,7 +228,7 @@ object DeviceDetailsScreen {
             Spacer(modifier = Modifier.height(16.dp))
             Tags(deviceData = deviceData, viewModel = viewModel)
             Spacer(modifier = Modifier.height(16.dp))
-            DeviceContent(modifier = Modifier, deviceData = deviceData)
+            DeviceContent(modifier = Modifier, deviceData = deviceData, viewModel = viewModel)
             Spacer(modifier = Modifier.height(16.dp))
             SystemNavbarSpacer()
         }
@@ -233,8 +247,30 @@ object DeviceDetailsScreen {
                 ) {
                     RadarIcon()
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(modifier = Modifier.weight(1f), text = stringResource(id = R.string.device_is_online), fontWeight = FontWeight.SemiBold)
+                    Column {
+                        Text(modifier = Modifier, text = stringResource(id = R.string.device_is_online), fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = stringResource(viewModel.connectionStatus.statusRes))
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
+                    when (val status = viewModel.connectionStatus) {
+                        is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTED -> {
+                            Button(onClick = { viewModel.establishConnection() }) {
+                                Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
+                            }
+                        }
+
+                        is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
+                            Button(onClick = { viewModel.disconnect(status.gatt) }) {
+                                Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
+                            }
+                        }
+
+                        is DeviceDetailsViewModel.ConnectionStatus.CONNECTING, is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
                     SignalData(rssi = onlineStatus.signalStrength, distance = onlineStatus.distance)
                 }
             }
@@ -245,6 +281,7 @@ object DeviceDetailsScreen {
     private fun DeviceContent(
         modifier: Modifier = Modifier,
         deviceData: DeviceData,
+        viewModel: DeviceDetailsViewModel,
     ) {
         RoundedBox(
             modifier = modifier
@@ -258,11 +295,17 @@ object DeviceDetailsScreen {
                         .padding(horizontal = 16.dp)
                 ) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = deviceData.buildDisplayName(),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        DeviceTypeIcon(modifier = Modifier.size(42.dp), device = deviceData, paddingDp = 4.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = deviceData.buildDisplayName(),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        DevicePairedIcon(deviceData.isPaired, extended = true)
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_name), fontWeight = FontWeight.Bold)
@@ -270,11 +313,17 @@ object DeviceDetailsScreen {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_address), fontWeight = FontWeight.Bold)
-                    Text(text = deviceData.address)
+                    ExtendedAddressView(deviceData.extendedAddressInfo())
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_manufacturer), fontWeight = FontWeight.Bold)
                     Text(text = deviceData.manufacturerInfo?.name ?: stringResource(R.string.not_applicable))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Services(viewModel.services, viewModel)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    RawData(viewModel.rawData)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row {
@@ -300,7 +349,146 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    fun Tags(
+    private fun Services(servicesUuids: Set<DeviceDetailsViewModel.ServiceData>, viewModel: DeviceDetailsViewModel) {
+        ExpandableLine(pluralStringResource(R.plurals.services_discovered, servicesUuids.size, servicesUuids.size)) {
+            servicesUuids.forEach { service ->
+                ServiceDetails(service, viewModel)
+            }
+        }
+    }
+
+    @Composable
+    private fun ServiceDetails(service: DeviceDetailsViewModel.ServiceData, viewModel: DeviceDetailsViewModel) {
+        val serviceUuid = service.uuid
+        val name = service.name
+        ExpandableLine(
+            title = {
+                Column {
+                    Text(
+                        text = serviceUuid,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (name != null) {
+                        Text(
+                            text = name,
+                            fontWeight = FontWeight.Light,
+                        )
+                    }
+                }
+            },
+            isExpandable = service.characteristics.isNotEmpty()
+        ) {
+            Column(
+                Modifier
+                    .border(width = 1.dp, color = MaterialTheme.colorScheme.onSurface, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                service.characteristics.forEach { characteristic ->
+                    CharacteristicDetails(characteristic, viewModel)
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun CharacteristicDetails(characteristic: DeviceDetailsViewModel.CharacteristicData, viewModel: DeviceDetailsViewModel) {
+        val characteristicUuid = characteristic.uuid
+        val isExpandable = characteristic.gatt.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0
+        val name = characteristic.name
+
+        ExpandableLine(
+            title = {
+                Column {
+                    Text(
+                        text = characteristicUuid,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (name != null) {
+                        Text(
+                            text = name,
+                            fontWeight = FontWeight.Light,
+                        )
+                    }
+                }
+            },
+            isExpandable = isExpandable
+        ) {
+            val value = characteristic.value
+            val valueHex = characteristic.valueHex
+            if (value != null && valueHex != null) {
+                Text(value)
+                Text(valueHex)
+            } else {
+                TagChip(stringResource(R.string.read)) { viewModel.readService(characteristic.gatt) }
+            }
+        }
+    }
+
+    @Composable
+    private fun RawData(rawData: List<Pair<String, String>>) {
+        ExpandableLine(pluralStringResource(R.plurals.device_details_raw_data, rawData.size, rawData.size)) {
+            rawData.forEach { (key, value) ->
+                Row {
+                    Text(modifier = Modifier.padding(8.dp), text = "0x$key")
+                    Spacer(Modifier.width(8.dp))
+                    Text(modifier = Modifier.padding(8.dp), text = "0x$value")
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun ExpandableLine(title: String, isExpandable: Boolean = true, content: @Composable () -> Unit) {
+        ExpandableLine(
+            title = {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            isExpandable = isExpandable,
+            content = content
+        )
+    }
+
+    @Composable
+    private fun ExpandableLine(title: @Composable () -> Unit, isExpandable: Boolean = true, content: @Composable () -> Unit) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            var expanded by remember { mutableStateOf(false) }
+            val rotation by animateFloatAsState(180f * if (expanded) 1 else 0)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        if (isExpandable) {
+                            expanded = !expanded
+                        }
+                    }
+                    .padding(vertical = 8.dp)
+            ) {
+                title.invoke()
+                if (isExpandable) {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        modifier = Modifier.rotate(rotation),
+                        painter = painterResource(R.drawable.ic_drop_up),
+                        contentDescription = null,
+                    )
+                }
+            }
+
+            AnimatedVisibility(expanded) {
+                Column {
+                    content.invoke()
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun Tags(
         deviceData: DeviceData,
         viewModel: DeviceDetailsViewModel,
     ) {
@@ -322,7 +510,7 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    fun Tag(
+    private fun Tag(
         deviceData: DeviceData,
         name: String,
         viewModel: DeviceDetailsViewModel,
@@ -352,7 +540,7 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    fun AddTag(
+    private fun AddTag(
         deviceData: DeviceData,
         viewModel: DeviceDetailsViewModel,
     ) {
@@ -395,7 +583,8 @@ object DeviceDetailsScreen {
                         dialog.hide()
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .clickable(onClick = onClick),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -442,7 +631,8 @@ object DeviceDetailsScreen {
                         dialog.hide()
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .clickable(onClick = onClick),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -619,9 +809,9 @@ object DeviceDetailsScreen {
                     }
                 })
             },
-            onUpdate = { map -> mapView = map  }
+            onUpdate = { map -> mapView = map }
         )
-        val mapColorScheme = remember { MapColorScheme(colorScheme.scrim.copy(alpha = 0.6f,), Color.Red) }
+        val mapColorScheme = remember { MapColorScheme(colorScheme.scrim.copy(alpha = 0.6f), Color.Red) }
 
         LaunchedEffect(mapView, viewModel.pointsState, viewModel.pointsStyle) {
             if (mapView != null) {
@@ -661,6 +851,7 @@ object DeviceDetailsScreen {
             DeviceDetailsViewModel.PointsStyle.MARKERS -> {
                 batchProcessor.process(mapUpdate.points, mapUpdate.map)
             }
+
             DeviceDetailsViewModel.PointsStyle.PATH -> {
                 batchProcessor.cancel()
                 mapUpdate.map.overlays.clear()

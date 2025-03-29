@@ -18,6 +18,7 @@ object FilterUiMapper {
             is FilterUiState.Name -> RadarProfile.Filter.Name(from.name, from.ignoreCase)
             is FilterUiState.Address -> RadarProfile.Filter.Address(from.address)
             is FilterUiState.IsFavorite -> RadarProfile.Filter.IsFavorite(from.favorite)
+            is FilterUiState.IsPaired -> RadarProfile.Filter.IsPaired(from.isPaired)
             is FilterUiState.Manufacturer -> RadarProfile.Filter.Manufacturer(from.manufacturer!!.id)
             is FilterUiState.LastDetectionInterval -> RadarProfile.Filter.LastDetectionInterval(
                 from = mapTimeToUi(from.fromDate, from.fromTime, Long.MIN_VALUE),
@@ -72,6 +73,9 @@ object FilterUiMapper {
             }
             is RadarProfile.Filter.IsFavorite -> FilterUiState.IsFavorite().apply {
                 this.favorite = from.favorite
+            }
+            is RadarProfile.Filter.IsPaired -> FilterUiState.IsPaired().apply {
+                this.isPaired = from.isPaired
             }
             is RadarProfile.Filter.FirstDetectionInterval -> FilterUiState.FirstDetectionInterval().apply {
                 this.fromDate = from.from.takeIf { it != Long.MIN_VALUE }?.toLocalDate()

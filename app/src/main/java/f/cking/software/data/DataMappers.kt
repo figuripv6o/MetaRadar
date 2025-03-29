@@ -12,7 +12,6 @@ import f.cking.software.domain.model.JournalEntry
 import f.cking.software.domain.model.LocationModel
 import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -51,6 +50,11 @@ fun DeviceEntity.toDomain(appleAirDrop: AppleAirDrop?): DeviceData {
         lastFollowingDetectionTimeMs = lastFollowingDetectionMs,
         tags = tags.toSet(),
         rssi = lastSeenRssi,
+        systemAddressType = systemAddressType,
+        deviceClass = deviceClass,
+        isPaired = isPaired,
+        servicesUuids = serviceUuids,
+        rowDataEncoded = rowDataEncoded,
     )
 }
 
@@ -68,6 +72,11 @@ fun DeviceData.toData(): DeviceEntity {
         lastFollowingDetectionMs = lastFollowingDetectionTimeMs,
         tags = tags.toList(),
         lastSeenRssi = rssi,
+        systemAddressType = systemAddressType,
+        deviceClass = deviceClass,
+        isPaired = isPaired,
+        serviceUuids = servicesUuids,
+        rowDataEncoded = rowDataEncoded,
     )
 }
 

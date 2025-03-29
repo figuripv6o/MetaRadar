@@ -24,6 +24,7 @@ import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
 import f.cking.software.service.BgScanService
 import f.cking.software.ui.ScreenNavigationCommands
+import f.cking.software.ui.devicelist.DeviceListViewModel.ActiveScannerExpandedState.entries
 import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.ext.getFullName
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -398,7 +400,15 @@ class DeviceListViewModel(
                 first.distance() != second.distance() -> second.distance()?.compareTo(first.distance() ?: return@Comparator 1) ?: -1
                 else -> GENERAL_COMPARATOR.compare(first, second)
             }
-        }, R.string.sort_type_by_distance)
+        }, R.string.sort_type_by_distance),
+        BY_TYPE(Comparator { second, first ->
+            val firstType = first.resolvedDeviceClass
+            val secondType = second.resolvedDeviceClass
+            when {
+                firstType != secondType -> secondType::class.getFullName().compareTo(firstType::class.getFullName())
+                else -> GENERAL_COMPARATOR.compare(first, second)
+            }
+        }, R.string.sort_type_by_device_type)
     }
 
     enum class ActiveScannerExpandedState {
@@ -418,6 +428,7 @@ class DeviceListViewModel(
         private const val INITIAL_PAGE = 0
 
         private val GENERAL_COMPARATOR = Comparator<DeviceData> { second, first ->
+
             when {
                 first.lastDetectTimeMs != second.lastDetectTimeMs -> first.lastDetectTimeMs.compareTo(second.lastDetectTimeMs)
 

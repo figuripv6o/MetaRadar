@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -75,6 +77,7 @@ import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import f.cking.software.R
 import f.cking.software.domain.model.DeviceData
+import f.cking.software.domain.model.ExtendedAddressInfo
 import f.cking.software.dpToPx
 import f.cking.software.pxToDp
 import f.cking.software.toHexString
@@ -161,7 +164,7 @@ fun rememberTimeDialog(
 @Composable
 fun infoDialog(
     title: String,
-    content: String,
+    content: String?,
 ): MaterialDialogState {
     val dialogState = rememberMaterialDialogState()
     ThemedDialog(
@@ -175,8 +178,10 @@ fun infoDialog(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = title, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = content)
+            if (!content.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = content)
+            }
         }
     }
     return dialogState
@@ -253,72 +258,217 @@ fun DeviceListItem(
             .fillMaxWidth()
             .clickable { onClick.invoke() },
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                if (device.favorite) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = stringResource(R.string.is_favorite),
-                        tint = MaterialTheme.colorScheme.onSurface
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            DeviceTypeIcon(
+                modifier = Modifier.size(64.dp),
+                device = device,
+            )
+
+            Spacer(Modifier.width(16.dp))
+
+            Column {
+                Row(verticalAlignment = Alignment.Top) {
+                    if (device.favorite) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = stringResource(R.string.is_favorite),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    if (device.isPaired) {
+                        DevicePairedIcon(true)
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = device.name ?: stringResource(R.string.not_applicable),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = device.name ?: stringResource(R.string.not_applicable),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                if (showSignalData) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    SignalData(rssi = device.rssi, distance = device.distance())
-                }
-            }
-            device.tags.takeIf { it.isNotEmpty() }?.let { tags ->
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    mainAxisSpacing = 4.dp,
-                ) {
-                    tags.forEachIndexed { index, tag ->
-                        TagChip(tagName = tag, onClick = { onTagSelected.invoke(tag) })
+                    if (showSignalData) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        SignalData(rssi = device.rssi, distance = device.distance())
                     }
                 }
-            }
-            device.manufacturerInfo?.name?.let {
+                device.tags.takeIf { it.isNotEmpty() }?.let { tags ->
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        mainAxisSpacing = 4.dp,
+                    ) {
+                        tags.forEachIndexed { index, tag ->
+                            TagChip(tagName = tag, onClick = { onTagSelected.invoke(tag) })
+                        }
+                    }
+                }
+                device.manufacturerInfo?.name?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = it)
+                }
+                device.manufacturerInfo?.airdrop?.let { airdrop ->
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = airdrop.contacts.joinToString { "0x${it.sha256.toHexString().uppercase()}" })
+                }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = it)
-            }
-            device.manufacturerInfo?.airdrop?.let { airdrop ->
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = airdrop.contacts.joinToString { "0x${it.sha256.toHexString().uppercase()}" })
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = device.address,
-                fontWeight = FontWeight.Light,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+                ExtendedAddressView(device.extendedAddressInfo())
+                Spacer(modifier = Modifier.height(4.dp))
 
-            val updateStr = if (showLastUpdate) {
-                stringResource(
-                    R.string.lifetime_data_last_update,
-                    device.firstDetectionPeriod(LocalContext.current),
-                    device.lastDetectionPeriod(LocalContext.current),
-                )
-            } else {
-                stringResource(
-                    R.string.lifetime_data,
-                    device.firstDetectionPeriod(LocalContext.current),
+                val updateStr = if (showLastUpdate) {
+                    stringResource(
+                        R.string.lifetime_data_last_update,
+                        device.firstDetectionPeriod(LocalContext.current),
+                        device.lastDetectionPeriod(LocalContext.current),
+                    )
+                } else {
+                    stringResource(
+                        R.string.lifetime_data,
+                        device.firstDetectionPeriod(LocalContext.current),
+                    )
+                }
+                Text(
+                    text = updateStr,
+                    fontWeight = FontWeight.Light,
                 )
             }
-            Text(
-                text = updateStr,
-                fontWeight = FontWeight.Light,
-            )
         }
     }
+}
+
+@Composable
+fun DevicePairedIcon(isPaired: Boolean, extended: Boolean = false) {
+    if (isPaired) {
+        val color = colorResource(R.color.blue_600)
+        val infoDialog = infoDialog(
+            title = stringResource(id = R.string.bluetooth_status_paired_description),
+            content = null,
+        )
+        Row(
+            modifier = Modifier.background(color.copy(0.2f), RoundedCornerShape(20.dp))
+                .clickable { infoDialog.show() },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                painter = painterResource(R.drawable.ic_ble_paired),
+                contentDescription = stringResource(R.string.bluetooth_status_paired),
+                tint = color
+            )
+            if (extended) {
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = stringResource(id = R.string.bluetooth_status_paired),
+                    color = color,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.width(4.dp))
+            }
+            Spacer(Modifier.width(4.dp))
+        }
+    }
+}
+
+@Composable
+fun DeviceTypeIcon(
+    modifier: Modifier = Modifier.size(64.dp),
+    device: DeviceData,
+    paddingDp: Dp = 16.dp
+) {
+    val icon = remember(device) { GetIconForDeviceClass.getIcon(device) }
+    val color = colorByHash(device.address.hashCode())
+    Icon(
+        modifier = modifier.background(color.copy(0.2f), CircleShape)
+            .padding(paddingDp),
+        painter = painterResource(icon),
+        contentDescription = stringResource(R.string.device_type),
+        tint = color
+    )
+}
+
+@Composable
+fun ExtendedAddressView(
+    extendedAddressInfo: ExtendedAddressInfo,
+) {
+
+    Row {
+        Text(
+            text = extendedAddressInfo.address,
+            fontWeight = FontWeight.Light,
+        )
+        val chip = extendedAddressInfo.type.toChip()
+        if (chip != null) {
+
+            val dialog = infoDialog(
+                title = stringResource(id = chip.descriptionRes),
+                content = stringResource(id = R.string.address_private_disclamer)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+            val color = chip.color.invoke()
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(color.copy(alpha = 0.2f))
+                    .clickable { dialog.show() }
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = chip.titleRes),
+                    color = color,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Icon(
+                    modifier = Modifier
+                        .size(12.dp),
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = stringResource(R.string.app_info_title),
+                    tint = color
+                )
+            }
+        }
+    }
+}
+
+private fun ExtendedAddressInfo.BleAddressType.toChip(): ExtendedAddressInfoChip? {
+    return when (this) {
+        ExtendedAddressInfo.BleAddressType.PUBLIC -> ExtendedAddressInfoChip.PUBLIC
+        ExtendedAddressInfo.BleAddressType.STATIC_RANDOM -> ExtendedAddressInfoChip.RANDOM
+        ExtendedAddressInfo.BleAddressType.NON_RESOLVABLE_PRIVATE -> ExtendedAddressInfoChip.NON_RESOLVABLE
+        ExtendedAddressInfo.BleAddressType.RESOLVABLE_PRIVATE -> ExtendedAddressInfoChip.RESOLVABLE
+        ExtendedAddressInfo.BleAddressType.INVALID -> null
+    }
+}
+
+private enum class ExtendedAddressInfoChip(
+    val titleRes: Int,
+    val descriptionRes: Int,
+    val color: @Composable () -> Color,
+) {
+    PUBLIC(
+        titleRes = R.string.address_type_public_tag,
+        descriptionRes = R.string.address_type_public_description,
+        color = { colorResource(R.color.address_tag_stp) },
+    ),
+    RANDOM(
+        titleRes = R.string.address_type_random_static_tag,
+        descriptionRes = R.string.address_type_random_static_description,
+        color = { colorResource(R.color.address_tag_rst) },
+    ),
+    NON_RESOLVABLE(
+        titleRes = R.string.address_type_non_resolvable_tag,
+        descriptionRes = R.string.address_type_non_resolvable_description,
+        color = { colorResource(R.color.address_tag_nrp) },
+    ),
+    RESOLVABLE(
+        titleRes = R.string.address_type_resolvable_private_tag,
+        descriptionRes = R.string.address_type_resolvable_private_description,
+        color = { colorResource(R.color.address_tag_rpa) },
+    ),
 }
 
 @Composable
