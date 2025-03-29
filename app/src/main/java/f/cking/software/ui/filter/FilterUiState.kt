@@ -61,6 +61,14 @@ sealed class FilterUiState {
         }
     }
 
+    class IsPaired : FilterUiState() {
+        var isPaired: Boolean by mutableStateOf(true)
+
+        override fun isCorrect(): Boolean {
+            return true
+        }
+    }
+
     class MinLostTime : FilterUiState() {
         var minLostTime: Long? by mutableStateOf(null)
 

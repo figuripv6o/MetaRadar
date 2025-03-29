@@ -113,6 +113,8 @@
     <string name="filter_by_last_detection_period_description">Triggers if the found device was last time detected in the selected period</string>
     <string name="filter_by_is_favorite">By is favorite</string>
     <string name="filter_by_is_favorite_description">Triggers if the device is marked as a favorite</string>
+    <string name="filter_by_is_paired">By is paired</string>
+    <string name="filter_by_is_paired_description">Triggers if the found device is paired to your device</string>
     <string name="filter_by_manufacturer">By manufacturer</string>
     <string name="filter_by_manufacturer_description">Triggers when the device\'s chipset manufacturer matches</string>
     <string name="filter_by_min_lost_period">By min lost period</string>
@@ -164,6 +166,7 @@
     <string name="to_date">To date</string>
     <string name="to_time">To time</string>
     <string name="is_favorite">Is favorite</string>
+    <string name="is_paired">Is paired</string>
     <string name="filter_user_location_if_no_location">Skip filter if location is not available (otherwise default value is false)</string>
     <string name="change">Change</string>
     <string name="cannot_save_profile">Cannot save profile. Check your configuration</string>
