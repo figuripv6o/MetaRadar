@@ -213,6 +213,7 @@
     <string name="device_details_title">Device details</string>
     <string name="is_not_favorite">Is not favorite</string>
     <string name="device_details_name">Name</string>
+    <string name="device_type">Device type</string>
     <string name="not_applicable">N/A</string>
     <string name="device_details_address">Address</string>
     <string name="device_details_manufacturer">Manufacturer</string>

@@ -86,6 +86,14 @@ object BuildDeviceClassFromSystemInfo {
                     else -> DeviceClass.Health.Uncategorised
                 }
             }
+            BluetoothClass.Device.Major.PERIPHERAL -> {
+                when (systemClass) {
+                    BluetoothClass.Device.PERIPHERAL_KEYBOARD -> DeviceClass.Peripheral.Keyboard
+                    BluetoothClass.Device.PERIPHERAL_KEYBOARD_POINTING -> DeviceClass.Peripheral.KeyboardPointing
+                    BluetoothClass.Device.PERIPHERAL_POINTING -> DeviceClass.Peripheral.Pointing
+                    else -> DeviceClass.Peripheral.Uncategorised
+                }
+            }
 
             else -> DeviceClass.Unknown
         }

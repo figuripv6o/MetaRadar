@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -257,68 +258,79 @@ fun DeviceListItem(
             .fillMaxWidth()
             .clickable { onClick.invoke() },
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                if (device.favorite) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = stringResource(R.string.is_favorite),
-                        tint = MaterialTheme.colorScheme.onSurface
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            DeviceTypeIcon(
+                modifier = Modifier.size(64.dp),
+                device = device,
+            )
+
+            Spacer(Modifier.width(16.dp))
+
+            Column {
+                Row(verticalAlignment = Alignment.Top) {
+                    if (device.favorite) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = stringResource(R.string.is_favorite),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = device.name ?: stringResource(R.string.not_applicable),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    text = device.name ?: stringResource(R.string.not_applicable),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                DevicePairedIcon(device.isPaired)
-                Spacer(modifier = Modifier.weight(1f))
-                if (showSignalData) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    SignalData(rssi = device.rssi, distance = device.distance())
-                }
-            }
-            device.tags.takeIf { it.isNotEmpty() }?.let { tags ->
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    mainAxisSpacing = 4.dp,
-                ) {
-                    tags.forEachIndexed { index, tag ->
-                        TagChip(tagName = tag, onClick = { onTagSelected.invoke(tag) })
+                    DevicePairedIcon(device.isPaired)
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (showSignalData) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        SignalData(rssi = device.rssi, distance = device.distance())
                     }
                 }
-            }
-            device.manufacturerInfo?.name?.let {
+                device.tags.takeIf { it.isNotEmpty() }?.let { tags ->
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        mainAxisSpacing = 4.dp,
+                    ) {
+                        tags.forEachIndexed { index, tag ->
+                            TagChip(tagName = tag, onClick = { onTagSelected.invoke(tag) })
+                        }
+                    }
+                }
+                device.manufacturerInfo?.name?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = it)
+                }
+                device.manufacturerInfo?.airdrop?.let { airdrop ->
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = airdrop.contacts.joinToString { "0x${it.sha256.toHexString().uppercase()}" })
+                }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = it)
-            }
-            device.manufacturerInfo?.airdrop?.let { airdrop ->
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = airdrop.contacts.joinToString { "0x${it.sha256.toHexString().uppercase()}" })
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            ExtendedAddressView(device.extendedAddressInfo())
-            Spacer(modifier = Modifier.height(4.dp))
+                ExtendedAddressView(device.extendedAddressInfo())
+                Spacer(modifier = Modifier.height(4.dp))
 
-            val updateStr = if (showLastUpdate) {
-                stringResource(
-                    R.string.lifetime_data_last_update,
-                    device.firstDetectionPeriod(LocalContext.current),
-                    device.lastDetectionPeriod(LocalContext.current),
-                )
-            } else {
-                stringResource(
-                    R.string.lifetime_data,
-                    device.firstDetectionPeriod(LocalContext.current),
+                val updateStr = if (showLastUpdate) {
+                    stringResource(
+                        R.string.lifetime_data_last_update,
+                        device.firstDetectionPeriod(LocalContext.current),
+                        device.lastDetectionPeriod(LocalContext.current),
+                    )
+                } else {
+                    stringResource(
+                        R.string.lifetime_data,
+                        device.firstDetectionPeriod(LocalContext.current),
+                    )
+                }
+                Text(
+                    text = updateStr,
+                    fontWeight = FontWeight.Light,
                 )
             }
-            Text(
-                text = updateStr,
-                fontWeight = FontWeight.Light,
-            )
         }
     }
 }
@@ -354,6 +366,23 @@ fun DevicePairedIcon(isPaired: Boolean, extended: Boolean = false) {
             Spacer(Modifier.width(4.dp))
         }
     }
+}
+
+@Composable
+fun DeviceTypeIcon(
+    modifier: Modifier = Modifier.size(64.dp),
+    device: DeviceData,
+    paddingDp: Dp = 16.dp
+) {
+    val icon = GetIconForDeviceClass.getIcon(device)
+    val color = colorByHash(device.address.hashCode())
+    Icon(
+        modifier = modifier.background(color.copy(0.2f), CircleShape)
+            .padding(paddingDp),
+        painter = painterResource(icon),
+        contentDescription = stringResource(R.string.device_type),
+        tint = color
+    )
 }
 
 @Composable
