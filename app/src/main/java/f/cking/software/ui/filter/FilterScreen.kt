@@ -76,6 +76,7 @@ object FilterScreen {
             is FilterUiState.Address -> FilterAddress(router, filterState, onDeleteClick)
             is FilterUiState.AppleAirdropContact -> FilterAirdropContact(filterState, onDeleteClick)
             is FilterUiState.IsFavorite -> FilterIsFavorite(filterState, onDeleteClick)
+            is FilterUiState.IsPaired -> FilterIsPaired(filterState, onDeleteClick)
             is FilterUiState.Manufacturer -> FilterManufacturer(router, filterState, onDeleteClick)
             is FilterUiState.MinLostTime -> FilterMinLostPeriod(filterState, onDeleteClick)
             is FilterUiState.LastDetectionInterval -> FilterLastDetectionInterval(filterState, onDeleteClick)
@@ -447,6 +448,25 @@ object FilterScreen {
                 Text(text = stringResource(R.string.is_favorite))
                 Checkbox(checked = filter.favorite, onCheckedChange = {
                     filter.favorite = it
+                })
+            }
+        }
+    }
+
+    @Composable
+    private fun FilterIsPaired(
+        filter: FilterUiState.IsPaired,
+        onDeleteClick: (child: FilterUiState) -> Unit,
+    ) {
+        FilterBase(
+            title = stringResource(R.string.filter_by_is_paired),
+            color = colorResource(R.color.filter_lost_time),
+            onDeleteButtonClick = { onDeleteClick.invoke(filter) }
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = stringResource(R.string.is_paired))
+                Checkbox(checked = filter.isPaired, onCheckedChange = {
+                    filter.isPaired = it
                 })
             }
         }

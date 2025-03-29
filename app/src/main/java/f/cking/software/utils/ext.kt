@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Base64
 import android.util.TypedValue
 import android.view.Display
 import android.view.WindowManager
@@ -185,4 +186,12 @@ fun <T> Flow<T>.collectAsState(scope: CoroutineScope, initialValue: T): State<T>
         .launchIn(scope)
 
     return state
+}
+
+fun ByteArray.toBase64(): String {
+    return Base64.encodeToString(this, Base64.NO_WRAP)
+}
+
+fun String.fromBase64(): ByteArray {
+    return Base64.decode(this, Base64.NO_WRAP)
 }

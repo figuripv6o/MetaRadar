@@ -113,6 +113,8 @@
     <string name="filter_by_last_detection_period_description">Triggers if the found device was last time detected in the selected period</string>
     <string name="filter_by_is_favorite">By is favorite</string>
     <string name="filter_by_is_favorite_description">Triggers if the device is marked as a favorite</string>
+    <string name="filter_by_is_paired">By is paired</string>
+    <string name="filter_by_is_paired_description">Triggers if the found device is paired to your device</string>
     <string name="filter_by_manufacturer">By manufacturer</string>
     <string name="filter_by_manufacturer_description">Triggers when the device\'s chipset manufacturer matches</string>
     <string name="filter_by_min_lost_period">By min lost period</string>
@@ -164,6 +166,7 @@
     <string name="to_date">To date</string>
     <string name="to_time">To time</string>
     <string name="is_favorite">Is favorite</string>
+    <string name="is_paired">Is paired</string>
     <string name="filter_user_location_if_no_location">Skip filter if location is not available (otherwise default value is false)</string>
     <string name="change">Change</string>
     <string name="cannot_save_profile">Cannot save profile. Check your configuration</string>
@@ -175,6 +178,16 @@
     <string name="filter_location_has_data">Location selected. Radius: %.1f m</string>
     <string name="filter_location_no_data">Select target location</string>
     <string name="select_tag">Select tag</string>
+    <string name="address_type_public_tag" translatable="false">STP</string>
+    <string name="address_type_random_static_tag" translatable="false">RST</string>
+    <string name="address_type_non_resolvable_tag" translatable="false">NRP</string>
+    <string name="address_type_resolvable_private_tag" translatable="false">RPA</string>
+
+    <string name="address_type_public_description">Static public address (trackable)</string>
+    <string name="address_type_random_static_description">Random static address (tracking is limited)</string>
+    <string name="address_type_non_resolvable_description">Not resolvable private address (usually not trackable)</string>
+    <string name="address_type_resolvable_private_description">Resolvable private address (usually not trackable)</string>
+    <string name="address_private_disclamer">Some devices will rotate their addresses to keep them private and avoid tracking. This label is not very accurate, but might help to distinguish the privacy level.</string>
 
     <!-- Devices List -->
     <string name="custom_filter">Custom filter</string>
@@ -200,6 +213,7 @@
     <string name="device_details_title">Device details</string>
     <string name="is_not_favorite">Is not favorite</string>
     <string name="device_details_name">Name</string>
+    <string name="device_type">Device type</string>
     <string name="not_applicable">N/A</string>
     <string name="device_details_address">Address</string>
     <string name="device_details_manufacturer">Manufacturer</string>
@@ -234,8 +248,26 @@
     <string name="sort_by_title">Sort by</string>
     <string name="sort_type_standart">Default</string>
     <string name="sort_type_by_distance">Distance</string>
+    <string name="sort_type_by_device_type">Device type</string>
     <string name="active_mode_show_all">Show all %s online devices</string>
     <string name="device_is_online">Online</string>
+    <plurals name="services_discovered">
+        <item quantity="zero">No services discovered</item>
+        <item quantity="one">%d service discovered</item>
+        <item quantity="other">%d services discovered</item>
+    </plurals>
+    <plurals name="device_details_raw_data">
+        <item quantity="zero">No raw data fragments</item>
+        <item quantity="one">%d raw data fragment</item>
+        <item quantity="other">%d raw data fragments</item>
+    </plurals>
+    <string name="device_details_status_connecting">Connecting</string>
+    <string name="device_details_status_connected">Connected</string>
+    <string name="device_details_status_disconnecting">Disconnecting</string>
+    <string name="device_details_status_disconnected">Disconnected</string>
+    <string name="device_details_connect">Connect</string>
+    <string name="device_details_disconnect">Disconnect</string>
+    <string name="read">Read</string>
 
     <!-- Main Screen -->
     <string name="menu_device_list">Device list</string>
@@ -313,4 +345,7 @@
     <string name="background_location_request_content">Our app uses Bluetooth Low Energy (BLE) to provide its core functionality. Due to Android’s policies, BLE access requires location permission because your location can be inferred from nearby BLE and WiFi signals.\n\nWhile the app works fine with location access only while you\'re using it, granting all-time location access ensures uninterrupted BLE scanning, even when the app is running in the background. Without this, the Android system may restrict or block BLE access, which could impact the app’s functionality.\n\nWe respect your privacy and only use location access for BLE scanning to make the app work seamlessly. The app does not transmit your data over the internet, and all information is securely stored locally on your device.</string>
     <string name="background_location_request_button">Grant permission</string>
     <string name="osm_copyright" translatable="false">© OpenStreetMap</string>
+
+    <string name="bluetooth_status_paired">paired</string>
+    <string name="bluetooth_status_paired_description">Device is paired</string>
 </resources>

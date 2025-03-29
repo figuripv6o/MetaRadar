@@ -40,6 +40,9 @@ class FilterCheckerImpl(
     private val isFavorite = filterChecker<RadarProfile.Filter.IsFavorite> { device, filter ->
         device.favorite == filter.favorite
     }
+    private val isPaired = filterChecker<RadarProfile.Filter.IsPaired> { device, filter ->
+        device.isPaired == filter.isPaired
+    }
     private val minLostTime = filterChecker<RadarProfile.Filter.MinLostTime> { device, filter ->
         System.currentTimeMillis() - device.lastDetectTimeMs >= filter.minLostTime
     }
@@ -90,6 +93,7 @@ class FilterCheckerImpl(
             is RadarProfile.Filter.Address -> address.check(deviceData, filter)
             is RadarProfile.Filter.Manufacturer -> manufacturer.check(deviceData, filter)
             is RadarProfile.Filter.IsFavorite -> isFavorite.check(deviceData, filter)
+            is RadarProfile.Filter.IsPaired -> isPaired.check(deviceData, filter)
             is RadarProfile.Filter.MinLostTime -> minLostTime.check(deviceData, filter)
             is RadarProfile.Filter.AppleAirdropContact -> airdrop.check(deviceData, filter)
             is RadarProfile.Filter.Any -> any.check(deviceData, filter)

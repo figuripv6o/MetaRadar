@@ -6,4 +6,8 @@ class BleScanDevice(
     val scanTimeMs: Long,
     val scanRecordRaw: ByteArray?,
     val rssi: Int?,
+    val addressType: Int?,
+    val deviceClass: Int?,
+    val isPaired: Boolean,
+    val serviceUuids: List<String>,
 )
