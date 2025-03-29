@@ -261,6 +261,12 @@
         <item quantity="one">%d raw data fragment</item>
         <item quantity="other">%d raw data fragments</item>
     </plurals>
+    <string name="device_details_status_connecting">Connecting</string>
+    <string name="device_details_status_connected">Connected</string>
+    <string name="device_details_status_disconnecting">Disconnecting</string>
+    <string name="device_details_status_disconnected">Disconnected</string>
+    <string name="device_details_connect">Connect</string>
+    <string name="device_details_disconnect">Disconnect</string>
 
     <!-- Main Screen -->
     <string name="menu_device_list">Device list</string>

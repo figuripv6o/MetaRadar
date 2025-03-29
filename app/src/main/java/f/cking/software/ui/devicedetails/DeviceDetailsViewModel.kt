@@ -1,5 +1,6 @@
 package f.cking.software.ui.devicedetails
 
+import android.bluetooth.BluetoothGatt
 import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -7,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import f.cking.software.R
+import f.cking.software.data.helpers.BleScannerHelper
 import f.cking.software.data.helpers.LocationProvider
 import f.cking.software.data.helpers.PermissionHelper
 import f.cking.software.data.helpers.PowerModeHelper
@@ -28,8 +30,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class DeviceDetailsViewModel(
     private val address: String,
@@ -41,6 +45,7 @@ class DeviceDetailsViewModel(
     private val addTagToDeviceInteractor: AddTagToDeviceInteractor,
     private val removeTagFromDeviceInteractor: RemoveTagFromDeviceInteractor,
     private val changeFavoriteInteractor: ChangeFavoriteInteractor,
+    private val bleScannerHelper: BleScannerHelper,
     private val getBleRecordFramesFromRawInteractor: GetBleRecordFramesFromRawInteractor,
 ) : ViewModel() {
 
@@ -52,6 +57,15 @@ class DeviceDetailsViewModel(
     var onlineStatusData: OnlineStatus? by mutableStateOf(null)
     var pointsStyle: PointsStyle by mutableStateOf(DEFAULT_POINTS_STYLE)
     var rawData: List<Pair<String, String>> by mutableStateOf(listOf())
+    var services: Set<String> by mutableStateOf(emptySet())
+    var connectionStatus: ConnectionStatus by mutableStateOf(ConnectionStatus.DISCONNECTED)
+
+    sealed interface ConnectionStatus {
+        data class CONNECTED(val gatt: BluetoothGatt) : ConnectionStatus
+        data object CONNECTING : ConnectionStatus
+        data object DISCONNECTED : ConnectionStatus
+        data object DISCONNECTING : ConnectionStatus
+    }
 
     private var currentLocation: LocationModel? = null
 
@@ -61,6 +75,45 @@ class DeviceDetailsViewModel(
             loadDevice(address)
             observeOnlineStatus()
             refreshLocationHistory(address, autotunePeriod = true)
+        }
+    }
+
+    fun establishConnection() {
+        viewModelScope.launch {
+            bleScannerHelper.connectToDevice(address)
+                .onStart { connectionStatus = ConnectionStatus.CONNECTING }
+                .collect { result ->
+                    when (result) {
+                        is BleScannerHelper.DeviceConnectResult.Connected -> {
+                            connectionStatus = ConnectionStatus.CONNECTED(result.gatt)
+                            bleScannerHelper.discoverServices(result.gatt)
+                        }
+                        is BleScannerHelper.DeviceConnectResult.Connecting -> {
+                            connectionStatus = ConnectionStatus.CONNECTING
+                        }
+                        is BleScannerHelper.DeviceConnectResult.Disconnected -> {
+                            connectionStatus = ConnectionStatus.DISCONNECTED
+                        }
+                        is BleScannerHelper.DeviceConnectResult.Disconnecting -> {
+                            connectionStatus = ConnectionStatus.DISCONNECTING
+                        }
+                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError -> {
+                            Timber.e(RuntimeException("Error while connecting to device, error code ${result.errorCode}"))
+                            connectionStatus = ConnectionStatus.DISCONNECTED
+                        }
+
+                        // services update
+                        is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
+                            addServices(result.services.map { it.uuid.toString() }.toSet())
+                        }
+                    }
+                }
+        }
+    }
+
+    fun disconnect(gatt: BluetoothGatt) {
+        viewModelScope.launch {
+            bleScannerHelper.disconnect(gatt)
         }
     }
 
@@ -105,8 +158,13 @@ class DeviceDetailsViewModel(
             back()
         } else {
             device.rowDataEncoded?.fromBase64()?.let { loadRawData(it) }
+            addServices(device.servicesUuids.toSet())
             deviceState = device
         }
+    }
+
+    private fun addServices(servicesUuids: Set<String>) {
+        services = (services + servicesUuids).toSet()
     }
 
     private fun observeLocation() {

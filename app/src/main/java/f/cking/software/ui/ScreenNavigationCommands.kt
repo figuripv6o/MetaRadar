@@ -45,7 +45,7 @@ object ScreenNavigationCommands {
     })
 
     class OpenDeviceDetailsScreen(val address: String) : AddToStackCommand(screenFunction = { key, _ ->
-        DeviceDetailsScreen.Screen(address = address, key)
+        DeviceDetailsScreen.Screen(address = address, key = key)
     })
 
     object OpenShaderTestScreen : AddToStackCommand(screenFunction = { key, router ->

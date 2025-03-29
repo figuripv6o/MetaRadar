@@ -9,6 +9,8 @@ class BuildDeviceFromScanDataInteractor(
 ) {
 
     fun execute(scanData: BleScanDevice): DeviceData {
+        val rawData = scanData.scanRecordRaw
+
         return DeviceData(
             address = scanData.address,
             name = scanData.name,
@@ -17,11 +19,8 @@ class BuildDeviceFromScanDataInteractor(
             detectCount = 1,
             customName = null,
             favorite = false,
-            manufacturerInfo = scanData.scanRecordRaw?.let {
-                getManufacturerInfoFromRawBleInteractor.execute(
-                    it,
-                    scanData.scanTimeMs
-                )
+            manufacturerInfo = rawData?.let {
+                getManufacturerInfoFromRawBleInteractor.execute(it, scanData.scanTimeMs)
             },
             lastFollowingDetectionTimeMs = null,
             tags = emptySet(),
@@ -30,7 +29,7 @@ class BuildDeviceFromScanDataInteractor(
             deviceClass = scanData.deviceClass,
             isPaired = scanData.isPaired,
             servicesUuids = scanData.serviceUuids,
-            rowDataEncoded = scanData.scanRecordRaw?.toBase64(),
+            rowDataEncoded = rawData?.toBase64(),
         )
     }
 }

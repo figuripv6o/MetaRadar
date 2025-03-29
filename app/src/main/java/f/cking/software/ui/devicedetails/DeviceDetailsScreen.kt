@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.flowlayout.FlowRow
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import f.cking.software.BuildConfig
 import f.cking.software.R
 import f.cking.software.dateTimeStringFormat
 import f.cking.software.domain.model.DeviceData
@@ -109,8 +111,12 @@ import java.time.format.FormatStyle
 object DeviceDetailsScreen {
 
     @Composable
-    fun Screen(address: String, key: String) {
-        val viewModel: DeviceDetailsViewModel = koinViewModel(key = key) { parametersOf(address) }
+    fun Screen(
+        address: String,
+        key: String,
+        viewModel: DeviceDetailsViewModel = koinViewModel(key = key) { parametersOf(address) }
+    ) {
+
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
         Scaffold(
             modifier = Modifier
@@ -245,6 +251,33 @@ object DeviceDetailsScreen {
                     Spacer(modifier = Modifier.width(8.dp))
                     SignalData(rssi = onlineStatus.signalStrength, distance = onlineStatus.distance)
                 }
+
+                if (BuildConfig.DEBUG) {
+                    Row {
+                        when (val status = viewModel.connectionStatus) {
+                            is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTED -> {
+                                Text(text = stringResource(R.string.device_details_status_disconnected))
+                                Button(onClick = { viewModel.establishConnection() }) {
+                                    Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
+                                }
+                            }
+                            is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
+                                Text(text = stringResource(R.string.device_details_status_connected))
+                                Button(onClick = { viewModel.disconnect(status.gatt) }) {
+                                    Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
+                                }
+                            }
+                            is DeviceDetailsViewModel.ConnectionStatus.CONNECTING -> {
+                                Text(text = stringResource(R.string.device_details_status_connecting))
+                                CircularProgressIndicator()
+                            }
+                            is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
+                                Text(text = stringResource(R.string.device_details_status_disconnecting))
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -292,7 +325,7 @@ object DeviceDetailsScreen {
                     Text(text = deviceData.manufacturerInfo?.name ?: stringResource(R.string.not_applicable))
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Services(deviceData)
+                    Services(viewModel.services)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     RawData(viewModel.rawData)
@@ -321,9 +354,9 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    private fun Services(device: DeviceData) {
-        ExpandableLine(pluralStringResource(R.plurals.services_discovered, device.servicesUuids.size, device.servicesUuids.size)) {
-            device.servicesUuids.forEach { service ->
+    private fun Services(servicesUuids: Set<String>) {
+        ExpandableLine(pluralStringResource(R.plurals.services_discovered, servicesUuids.size, servicesUuids.size)) {
+            servicesUuids.forEach { service ->
                 Text(modifier = Modifier.padding(8.dp), text = service)
             }
         }
