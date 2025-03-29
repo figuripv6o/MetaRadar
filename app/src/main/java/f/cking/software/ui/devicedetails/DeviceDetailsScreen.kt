@@ -1,10 +1,12 @@
 package f.cking.software.ui.devicedetails
 
+import android.bluetooth.BluetoothGattCharacteristic
 import android.graphics.Paint
 import android.view.MotionEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -261,16 +263,19 @@ object DeviceDetailsScreen {
                                     Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
                                 }
                             }
+
                             is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
                                 Text(text = stringResource(R.string.device_details_status_connected))
                                 Button(onClick = { viewModel.disconnect(status.gatt) }) {
                                     Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
                                 }
                             }
+
                             is DeviceDetailsViewModel.ConnectionStatus.CONNECTING -> {
                                 Text(text = stringResource(R.string.device_details_status_connecting))
                                 CircularProgressIndicator()
                             }
+
                             is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
                                 Text(text = stringResource(R.string.device_details_status_disconnecting))
                                 CircularProgressIndicator()
@@ -325,7 +330,7 @@ object DeviceDetailsScreen {
                     Text(text = deviceData.manufacturerInfo?.name ?: stringResource(R.string.not_applicable))
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Services(viewModel.services)
+                    Services(viewModel.services, viewModel)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     RawData(viewModel.rawData)
@@ -354,10 +359,77 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    private fun Services(servicesUuids: Set<String>) {
+    private fun Services(servicesUuids: Set<DeviceDetailsViewModel.ServiceData>, viewModel: DeviceDetailsViewModel) {
         ExpandableLine(pluralStringResource(R.plurals.services_discovered, servicesUuids.size, servicesUuids.size)) {
             servicesUuids.forEach { service ->
-                Text(modifier = Modifier.padding(8.dp), text = service)
+                ServiceDetails(service, viewModel)
+            }
+        }
+    }
+
+    @Composable
+    private fun ServiceDetails(service: DeviceDetailsViewModel.ServiceData, viewModel: DeviceDetailsViewModel) {
+        val serviceUuid = service.uuid
+        val name = service.name
+        ExpandableLine(
+            title = {
+                Column {
+                    Text(
+                        text = serviceUuid,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (name != null) {
+                        Text(
+                            text = name,
+                            fontWeight = FontWeight.Light,
+                        )
+                    }
+                }
+            },
+            isExpandable = service.characteristics.isNotEmpty()
+        ) {
+            Column(
+                Modifier
+                    .border(width = 1.dp, color = MaterialTheme.colorScheme.onSurface, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                service.characteristics.forEach { characteristic ->
+                    CharacteristicDetails(characteristic, viewModel)
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun CharacteristicDetails(characteristic: DeviceDetailsViewModel.CharacteristicData, viewModel: DeviceDetailsViewModel) {
+        val characteristicUuid = characteristic.uuid
+        val isExpandable = characteristic.gatt.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0
+        val name = characteristic.name
+
+        ExpandableLine(
+            title = {
+                Column {
+                    Text(
+                        text = characteristicUuid,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (name != null) {
+                        Text(
+                            text = name,
+                            fontWeight = FontWeight.Light,
+                        )
+                    }
+                }
+            },
+            isExpandable = isExpandable
+        ) {
+            val value = characteristic.value
+            val valueHex = characteristic.valueHex
+            if (value != null && valueHex != null) {
+                Text(value)
+                Text(valueHex)
+            } else {
+                TagChip(stringResource(R.string.read)) { viewModel.readService(characteristic.gatt) }
             }
         }
     }
@@ -376,7 +448,21 @@ object DeviceDetailsScreen {
     }
 
     @Composable
-    private fun ExpandableLine(title: String, content: @Composable () -> Unit) {
+    private fun ExpandableLine(title: String, isExpandable: Boolean = true, content: @Composable () -> Unit) {
+        ExpandableLine(
+            title = {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            isExpandable = isExpandable,
+            content = content
+        )
+    }
+
+    @Composable
+    private fun ExpandableLine(title: @Composable () -> Unit, isExpandable: Boolean = true, content: @Composable () -> Unit) {
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -385,19 +471,22 @@ object DeviceDetailsScreen {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { expanded = !expanded }
+                    .clickable {
+                        if (isExpandable) {
+                            expanded = !expanded
+                        }
+                    }
                     .padding(vertical = 8.dp)
             ) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(Modifier.width(8.dp))
-                Icon(
-                    modifier = Modifier.rotate(rotation),
-                    painter = painterResource(R.drawable.ic_drop_up),
-                    contentDescription = null,
-                )
+                title.invoke()
+                if (isExpandable) {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        modifier = Modifier.rotate(rotation),
+                        painter = painterResource(R.drawable.ic_drop_up),
+                        contentDescription = null,
+                    )
+                }
             }
 
             AnimatedVisibility(expanded) {

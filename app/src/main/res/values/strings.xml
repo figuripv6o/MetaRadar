@@ -267,6 +267,7 @@
     <string name="device_details_status_disconnected">Disconnected</string>
     <string name="device_details_connect">Connect</string>
     <string name="device_details_disconnect">Disconnect</string>
+    <string name="read">Read</string>
 
     <!-- Main Screen -->
     <string name="menu_device_list">Device list</string>

@@ -1,6 +1,8 @@
 package f.cking.software.ui.devicedetails
 
 import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattService
 import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,6 +19,8 @@ import f.cking.software.data.repo.LocationRepository
 import f.cking.software.domain.interactor.AddTagToDeviceInteractor
 import f.cking.software.domain.interactor.ChangeFavoriteInteractor
 import f.cking.software.domain.interactor.GetBleRecordFramesFromRawInteractor
+import f.cking.software.domain.interactor.GetCharacteristicNameFromUUID
+import f.cking.software.domain.interactor.GetServiceNameFromBluetoothService
 import f.cking.software.domain.interactor.RemoveTagFromDeviceInteractor
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.LocationModel
@@ -57,7 +61,7 @@ class DeviceDetailsViewModel(
     var onlineStatusData: OnlineStatus? by mutableStateOf(null)
     var pointsStyle: PointsStyle by mutableStateOf(DEFAULT_POINTS_STYLE)
     var rawData: List<Pair<String, String>> by mutableStateOf(listOf())
-    var services: Set<String> by mutableStateOf(emptySet())
+    var services: Set<ServiceData> by mutableStateOf(emptySet())
     var connectionStatus: ConnectionStatus by mutableStateOf(ConnectionStatus.DISCONNECTED)
 
     sealed interface ConnectionStatus {
@@ -66,6 +70,20 @@ class DeviceDetailsViewModel(
         data object DISCONNECTED : ConnectionStatus
         data object DISCONNECTING : ConnectionStatus
     }
+
+    data class ServiceData(
+        val name: String?,
+        val uuid: String,
+        val characteristics: List<CharacteristicData>,
+    )
+
+    data class CharacteristicData(
+        val name: String?,
+        val uuid: String,
+        val value: String?,
+        val valueHex: String?,
+        val gatt: BluetoothGattCharacteristic,
+    )
 
     private var currentLocation: LocationModel? = null
 
@@ -104,10 +122,49 @@ class DeviceDetailsViewModel(
 
                         // services update
                         is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
-                            addServices(result.services.map { it.uuid.toString() }.toSet())
+                            addServices(result.services.map { mapService(it) }.toSet())
+                        }
+                        is BleScannerHelper.DeviceConnectResult.CharacteristicRead -> {
+                            val updatedServices = services.map { service ->
+                                val updatedCharacteristics = service.characteristics.map { characteristic ->
+                                    if (characteristic.uuid == result.characteristic.uuid.toString()) {
+                                        mapCharacteristic(result.characteristic, result.valueEncoded64.fromBase64())
+                                    } else {
+                                        characteristic
+                                    }
+                                }
+                                service.copy(characteristics = updatedCharacteristics)
+                            }
+                            addServices(updatedServices.toSet())
                         }
                     }
                 }
+        }
+    }
+
+    private fun mapCharacteristic(characteristic: BluetoothGattCharacteristic, value: ByteArray? = null): CharacteristicData {
+        val valueStr = value?.decodeToString()
+        val valueHex = value?.toHexString()?.uppercase()?.let { "0x$it" }
+        return CharacteristicData(getCharacteristicNameIfKnown(characteristic), characteristic.uuid.toString(), valueStr, valueHex, characteristic)
+    }
+
+    private fun mapService(service: BluetoothGattService): ServiceData {
+        return ServiceData(getServiceNameIfKnown(service), service.uuid.toString(), service.characteristics.map { mapCharacteristic(it) })
+    }
+
+    private fun getServiceNameIfKnown(service: BluetoothGattService): String? {
+        return GetServiceNameFromBluetoothService.execute(service.uuid.toString())
+    }
+
+    private fun getCharacteristicNameIfKnown(characteristic: BluetoothGattCharacteristic): String? {
+        return GetCharacteristicNameFromUUID.execute(characteristic.uuid.toString())
+    }
+
+    fun readService(gattService: BluetoothGattCharacteristic) {
+        viewModelScope.launch {
+            (connectionStatus as? ConnectionStatus.CONNECTED)?.gatt?.let { gatt ->
+                bleScannerHelper.readCharacteristic(gatt, gattService)
+            }
         }
     }
 
@@ -142,6 +199,8 @@ class DeviceDetailsViewModel(
                     if (rssi != null && distance != null) {
                         deviceState = currentDevice
                         OnlineStatus(rssi, distance)
+                    } else if (connectionStatus is ConnectionStatus.CONNECTED) {
+                        OnlineStatus(null, null)
                     } else {
                         null
                     }
@@ -158,13 +217,13 @@ class DeviceDetailsViewModel(
             back()
         } else {
             device.rowDataEncoded?.fromBase64()?.let { loadRawData(it) }
-            addServices(device.servicesUuids.toSet())
+            addServices(device.servicesUuids.map { ServiceData(null, it, emptyList()) }.toSet())
             deviceState = device
         }
     }
 
-    private fun addServices(servicesUuids: Set<String>) {
-        services = (services + servicesUuids).toSet()
+    private fun addServices(servicesUuids: Set<ServiceData>) {
+        services = (services + servicesUuids).associateBy { it.uuid }.values.toSet()
     }
 
     private fun observeLocation() {
@@ -289,8 +348,8 @@ class DeviceDetailsViewModel(
     }
 
     data class OnlineStatus(
-        val signalStrength: Int,
-        val distance: Float,
+        val signalStrength: Int?,
+        val distance: Float?,
     )
 
     companion object {
