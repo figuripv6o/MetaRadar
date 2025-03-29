@@ -2,9 +2,15 @@ package f.cking.software.data.helpers
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.*
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import f.cking.software.domain.model.BleScanDevice
@@ -12,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.*
 
 class BleScannerHelper(
     private val bleFiltersProvider: BleFiltersProvider,
@@ -40,12 +45,22 @@ class BleScannerHelper(
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
             result.scanRecord?.serviceUuids?.map { bleFiltersProvider.previouslyNoticedServicesUUIDs.add(it.uuid.toString()) }
+            val addressType: Int? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                result.device.addressType
+            } else {
+                null
+            }
+            val isPaired = result.device.bondState == BluetoothDevice.BOND_BONDED
+
             val device = BleScanDevice(
                 address = result.device.address,
                 name = result.device.name,
                 scanTimeMs = currentScanTimeMs,
                 scanRecordRaw = result.scanRecord?.bytes,
                 rssi = result.rssi,
+                addressType = addressType,
+                deviceClass = result.device.bluetoothClass.deviceClass,
+                isPaired = isPaired,
             )
 
             batch.put(device.address, device)

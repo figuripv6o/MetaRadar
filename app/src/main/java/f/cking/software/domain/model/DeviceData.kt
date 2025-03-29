@@ -18,6 +18,9 @@ data class DeviceData(
     val tags: Set<String>,
     val lastFollowingDetectionTimeMs: Long?,
     val rssi: Int?,
+    val systemAddressType: Int?,
+    val deviceClass: Int?,
+    val isPaired: Boolean,
 ) {
 
     fun knownLifetime(): Long {
@@ -49,7 +52,7 @@ data class DeviceData(
     }
 
     fun extendedAddressInfo(): ExtendedAddressInfo {
-        return BuildExtendedAddressInfoInteractor.execute(address, knownLifetime(), manufacturerInfo)
+        return BuildExtendedAddressInfoInteractor.execute(this)
     }
 
     fun distance(): Float? {

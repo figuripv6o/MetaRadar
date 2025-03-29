@@ -1,6 +1,8 @@
 package f.cking.software.domain.interactor
 
+import android.bluetooth.BluetoothDevice
 import f.cking.software.data.helpers.BluetoothSIG
+import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.ExtendedAddressInfo
 import f.cking.software.domain.model.ExtendedAddressInfo.BleAddressType
 import f.cking.software.domain.model.ManufacturerInfo
@@ -9,9 +11,13 @@ import kotlin.time.toDuration
 
 object BuildExtendedAddressInfoInteractor {
 
-    fun execute(address: String, lifetime: Long, manufacturerInfo: ManufacturerInfo?): ExtendedAddressInfo {
-        val type = getBleAddressType(address, lifetime, manufacturerInfo)
-        return ExtendedAddressInfo(address, type)
+    fun execute(device: DeviceData): ExtendedAddressInfo {
+        val type = when (device.systemAddressType) {
+            BluetoothDevice.ADDRESS_TYPE_PUBLIC -> BleAddressType.PUBLIC
+            BluetoothDevice.ADDRESS_TYPE_ANONYMOUS -> BleAddressType.NON_RESOLVABLE_PRIVATE
+            else -> getBleAddressType(device.address, device.knownLifetime(), device.manufacturerInfo)
+        }
+        return ExtendedAddressInfo(device.address, type)
     }
 
     private fun getBleAddressType(address: String, lifetime: Long, manufacturerInfo: ManufacturerInfo?): BleAddressType {

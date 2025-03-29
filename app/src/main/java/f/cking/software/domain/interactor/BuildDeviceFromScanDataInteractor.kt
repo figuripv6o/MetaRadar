@@ -25,6 +25,9 @@ class BuildDeviceFromScanDataInteractor(
             lastFollowingDetectionTimeMs = null,
             tags = emptySet(),
             rssi = scanData.rssi,
+            systemAddressType = scanData.addressType,
+            deviceClass = scanData.deviceClass,
+            isPaired = scanData.isPaired,
         )
     }
 }

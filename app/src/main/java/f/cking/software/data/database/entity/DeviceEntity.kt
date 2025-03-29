@@ -18,4 +18,7 @@ data class DeviceEntity(
     @ColumnInfo(name = "last_following_detection_ms") val lastFollowingDetectionMs: Long? = null,
     @ColumnInfo(name = "tags", defaultValue = "") val tags: List<String>,
     @ColumnInfo(name = "last_seen_rssi") val lastSeenRssi: Int? = null,
+    @ColumnInfo(name = "system_address_type") val systemAddressType: Int? = null,
+    @ColumnInfo(name = "device_class") val deviceClass: Int? = null,
+    @ColumnInfo(name = "is_paired") val isPaired: Boolean = false,
 )
