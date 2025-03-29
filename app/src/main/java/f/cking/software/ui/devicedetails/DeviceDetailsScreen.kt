@@ -71,7 +71,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.flowlayout.FlowRow
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
-import f.cking.software.BuildConfig
 import f.cking.software.R
 import f.cking.software.dateTimeStringFormat
 import f.cking.software.domain.model.DeviceData
@@ -249,39 +248,31 @@ object DeviceDetailsScreen {
                 ) {
                     RadarIcon()
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(modifier = Modifier.weight(1f), text = stringResource(id = R.string.device_is_online), fontWeight = FontWeight.SemiBold)
+                    Column {
+                        Text(modifier = Modifier, text = stringResource(id = R.string.device_is_online), fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = stringResource(viewModel.connectionStatus.statusRes))
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
-                    SignalData(rssi = onlineStatus.signalStrength, distance = onlineStatus.distance)
-                }
-
-                if (BuildConfig.DEBUG) {
-                    Row {
-                        when (val status = viewModel.connectionStatus) {
-                            is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTED -> {
-                                Text(text = stringResource(R.string.device_details_status_disconnected))
-                                Button(onClick = { viewModel.establishConnection() }) {
-                                    Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
-                                }
-                            }
-
-                            is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
-                                Text(text = stringResource(R.string.device_details_status_connected))
-                                Button(onClick = { viewModel.disconnect(status.gatt) }) {
-                                    Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
-                                }
-                            }
-
-                            is DeviceDetailsViewModel.ConnectionStatus.CONNECTING -> {
-                                Text(text = stringResource(R.string.device_details_status_connecting))
-                                CircularProgressIndicator()
-                            }
-
-                            is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
-                                Text(text = stringResource(R.string.device_details_status_disconnecting))
-                                CircularProgressIndicator()
+                    when (val status = viewModel.connectionStatus) {
+                        is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTED -> {
+                            Button(onClick = { viewModel.establishConnection() }) {
+                                Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
                             }
                         }
+
+                        is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
+                            Button(onClick = { viewModel.disconnect(status.gatt) }) {
+                                Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
+                            }
+                        }
+
+                        is DeviceDetailsViewModel.ConnectionStatus.CONNECTING, is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
+                            CircularProgressIndicator()
+                        }
                     }
+                    Spacer(modifier = Modifier.weight(1f))
+                    SignalData(rssi = onlineStatus.signalStrength, distance = onlineStatus.distance)
                 }
             }
         }

@@ -27,10 +27,12 @@ import f.cking.software.domain.model.LocationModel
 import f.cking.software.domain.toDomain
 import f.cking.software.fromBase64
 import f.cking.software.service.BgScanService
+import f.cking.software.toBase64
 import f.cking.software.toHexString
 import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Router
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -38,6 +40,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.UUID
 
 class DeviceDetailsViewModel(
     private val address: String,
@@ -64,11 +67,11 @@ class DeviceDetailsViewModel(
     var services: Set<ServiceData> by mutableStateOf(emptySet())
     var connectionStatus: ConnectionStatus by mutableStateOf(ConnectionStatus.DISCONNECTED)
 
-    sealed interface ConnectionStatus {
-        data class CONNECTED(val gatt: BluetoothGatt) : ConnectionStatus
-        data object CONNECTING : ConnectionStatus
-        data object DISCONNECTED : ConnectionStatus
-        data object DISCONNECTING : ConnectionStatus
+    sealed class ConnectionStatus(@StringRes val statusRes: Int) {
+        data class CONNECTED(val gatt: BluetoothGatt) : ConnectionStatus(R.string.device_details_status_connected)
+        data object CONNECTING : ConnectionStatus(R.string.device_details_status_connecting)
+        data object DISCONNECTED : ConnectionStatus(R.string.device_details_status_disconnected)
+        data object DISCONNECTING : ConnectionStatus(R.string.device_details_status_disconnecting)
     }
 
     data class ServiceData(
@@ -82,6 +85,7 @@ class DeviceDetailsViewModel(
         val uuid: String,
         val value: String?,
         val valueHex: String?,
+        val encodedValue: String?,
         val gatt: BluetoothGattCharacteristic,
     )
 
@@ -100,11 +104,15 @@ class DeviceDetailsViewModel(
         viewModelScope.launch {
             bleScannerHelper.connectToDevice(address)
                 .onStart { connectionStatus = ConnectionStatus.CONNECTING }
+                .catch { e ->
+                    Timber.e(e)
+                    connectionStatus = ConnectionStatus.DISCONNECTED
+                }
                 .collect { result ->
                     when (result) {
                         is BleScannerHelper.DeviceConnectResult.Connected -> {
                             connectionStatus = ConnectionStatus.CONNECTED(result.gatt)
-                            bleScannerHelper.discoverServices(result.gatt)
+                            discoverServices(result.gatt)
                         }
                         is BleScannerHelper.DeviceConnectResult.Connecting -> {
                             connectionStatus = ConnectionStatus.CONNECTING
@@ -123,6 +131,7 @@ class DeviceDetailsViewModel(
                         // services update
                         is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
                             addServices(result.services.map { mapService(it) }.toSet())
+                            result.services.forEach { it.characteristics.forEach { readDescription(it) } }
                         }
                         is BleScannerHelper.DeviceConnectResult.CharacteristicRead -> {
                             val updatedServices = services.map { service ->
@@ -137,15 +146,35 @@ class DeviceDetailsViewModel(
                             }
                             addServices(updatedServices.toSet())
                         }
+                        is BleScannerHelper.DeviceConnectResult.DescriptorRead -> {
+                            val updatedServices = services.map { service ->
+                                val updatedCharacteristics = service.characteristics.map { characteristic ->
+                                    if (characteristic.gatt.descriptors.any { it.uuid == result.descriptor.uuid }) {
+                                        mapCharacteristic(characteristic.gatt, characteristic.encodedValue?.fromBase64(), result.valueEncoded64.fromBase64())
+                                    } else {
+                                        characteristic
+                                    }
+                                }
+                                service.copy(characteristics = updatedCharacteristics)
+                            }
+                            addServices(updatedServices.toSet())
+                        }
                     }
                 }
         }
     }
 
-    private fun mapCharacteristic(characteristic: BluetoothGattCharacteristic, value: ByteArray? = null): CharacteristicData {
+    private fun mapCharacteristic(characteristic: BluetoothGattCharacteristic, value: ByteArray? = null, description: ByteArray? = null): CharacteristicData {
         val valueStr = value?.decodeToString()
         val valueHex = value?.toHexString()?.uppercase()?.let { "0x$it" }
-        return CharacteristicData(getCharacteristicNameIfKnown(characteristic), characteristic.uuid.toString(), valueStr, valueHex, characteristic)
+        return CharacteristicData(
+            name = description?.decodeToString() ?: getCharacteristicNameIfKnown(characteristic),
+            uuid = characteristic.uuid.toString(),
+            value = valueStr,
+            valueHex = valueHex,
+            encodedValue = value?.toBase64(),
+            gatt = characteristic
+        )
     }
 
     private fun mapService(service: BluetoothGattService): ServiceData {
@@ -160,17 +189,49 @@ class DeviceDetailsViewModel(
         return GetCharacteristicNameFromUUID.execute(characteristic.uuid.toString())
     }
 
+    fun readDescription(characteristic: BluetoothGattCharacteristic) {
+        viewModelScope.launch {
+            val gat = (connectionStatus as? ConnectionStatus.CONNECTED)?.gatt
+            val descriptor = characteristic.descriptors.firstOrNull { it.uuid == UUID.fromString(DESCRIPTOR_CHARACTERISTIC_USER_DESCRIPTION) }
+            if (gat != null && descriptor != null) {
+                try {
+                    bleScannerHelper.readDescriptor(gat, characteristic, descriptor.uuid)
+                } catch (e: Exception) {
+                    Timber.e(e)
+                }
+            }
+        }
+    }
+
     fun readService(gattService: BluetoothGattCharacteristic) {
         viewModelScope.launch {
             (connectionStatus as? ConnectionStatus.CONNECTED)?.gatt?.let { gatt ->
-                bleScannerHelper.readCharacteristic(gatt, gattService)
+                try {
+                    bleScannerHelper.readCharacteristic(gatt, gattService)
+                } catch (e: Exception) {
+                    Timber.e(e)
+                }
+            }
+        }
+    }
+
+    fun discoverServices(gatt: BluetoothGatt) {
+        viewModelScope.launch {
+            try {
+                bleScannerHelper.discoverServices(gatt)
+            } catch (e: Exception) {
+                Timber.e(e)
             }
         }
     }
 
     fun disconnect(gatt: BluetoothGatt) {
         viewModelScope.launch {
-            bleScannerHelper.disconnect(gatt)
+            try {
+                bleScannerHelper.disconnect(gatt)
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
         }
     }
 
@@ -353,6 +414,7 @@ class DeviceDetailsViewModel(
     )
 
     companion object {
+        private const val DESCRIPTOR_CHARACTERISTIC_USER_DESCRIPTION = "00002901-0000-1000-8000-00805f9b34fb"
         private const val MAX_POINTS_FOR_MARKERS = 5_000
         private const val HISTORY_PERIOD_DAY = 24 * 60 * 60 * 1000L // 24 hours
         private const val HISTORY_PERIOD_WEEK = 7 * 24 * 60 * 60 * 1000L // 1 week

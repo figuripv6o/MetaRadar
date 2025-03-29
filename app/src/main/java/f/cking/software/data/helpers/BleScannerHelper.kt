@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.UUID
 
 class BleScannerHelper(
     private val bleFiltersProvider: BleFiltersProvider,
@@ -109,6 +111,16 @@ class BleScannerHelper(
                     }
                 }
 
+                override fun onDescriptorRead(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int, value: ByteArray) {
+                    super.onDescriptorRead(gatt, descriptor, status, value)
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                        Timber.tag(TAG_CONNECT).d("Descriptor read. ${descriptor.uuid}, value: ${value.decodeToString()}")
+                        trySend(DeviceConnectResult.DescriptorRead(descriptor, value.toBase64()))
+                    } else {
+                        Timber.tag(TAG_CONNECT).e("Error while reading descriptor ${descriptor.uuid}. Error code: $status")
+                    }
+                }
+
                 override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
                     super.onConnectionStateChange(gatt, status, newState)
                     checkStatus(newState, gatt, status)
@@ -169,9 +181,17 @@ class BleScannerHelper(
         gatt.readCharacteristic(characteristic)
     }
 
+    @SuppressLint("MissingPermission")
+    fun readDescriptor(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, descriptorUuid: UUID) {
+        Timber.tag(TAG_CONNECT).d("Reading descriptor $descriptorUuid for characteristic ${characteristic.uuid}")
+        val descriptor = characteristic.getDescriptor(descriptorUuid)
+        gatt.readDescriptor(descriptor)
+    }
+
     sealed interface DeviceConnectResult {
         data class AvailableServices(val services: List<BluetoothGattService>) : DeviceConnectResult
         data class CharacteristicRead(val characteristic: BluetoothGattCharacteristic, val valueEncoded64: String) : DeviceConnectResult
+        data class DescriptorRead(val descriptor: BluetoothGattDescriptor, val valueEncoded64: String) : DeviceConnectResult
         data object Connecting : DeviceConnectResult
         data class Connected(val gatt: BluetoothGatt) : DeviceConnectResult
         data object Disconnecting : DeviceConnectResult
