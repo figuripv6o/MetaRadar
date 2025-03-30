@@ -75,6 +75,7 @@ import f.cking.software.R
 import f.cking.software.dateTimeStringFormat
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.LocationModel
+import f.cking.software.domain.model.isNullOrEmpty
 import f.cking.software.dpToPx
 import f.cking.software.frameRate
 import f.cking.software.ui.AsyncBatchProcessor
@@ -320,6 +321,9 @@ object DeviceDetailsScreen {
                     Text(text = deviceData.manufacturerInfo?.name ?: stringResource(R.string.not_applicable))
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    DeviceMetadataView(deviceData, viewModel)
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Services(viewModel.services, viewModel)
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -346,6 +350,37 @@ object DeviceDetailsScreen {
                 }
             }
         }
+    }
+
+    @Composable
+    private fun DeviceMetadataView(device: DeviceData, viewModel: DeviceDetailsViewModel) {
+        val metadata = device.metadata
+        ExpandableLine(
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.device_details_metadata),
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    if (viewModel.matadataIsFetching) {
+                        CircularProgressIndicator()
+                    } else {
+                        TagChip(stringResource(R.string.fetch)) { viewModel.fetchDeviceServiceInfo(device) }
+                    }
+                }
+            },
+            isExpandable = !metadata.isNullOrEmpty(),
+            content = {
+                Column {
+                    metadata?.deviceName?.let { Text(text = it) }
+                    metadata?.manufacturerName?.let { Text(text = it) }
+                    metadata?.moderNumber?.let { Text(text = it) }
+                    metadata?.serialNumber?.let { Text(text = it) }
+                    metadata?.batteryLevel?.let { Text(text = "$it %") }
+                }
+            }
+        )
     }
 
     @Composable

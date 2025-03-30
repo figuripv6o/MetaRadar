@@ -34,5 +34,6 @@ object InteractorsModule {
         factory { EnjoyTheAppAskLaterInteractor(get()) }
         factory { CheckBatchForRadarMatchesInteractor(get(), get(), get(), get()) }
         factory { SaveOrMergeBatchInteractor(get(), get(), get(), get(), get()) }
+        factory { FetchDeviceServiceInfo(get(), get()) }
     }
 }

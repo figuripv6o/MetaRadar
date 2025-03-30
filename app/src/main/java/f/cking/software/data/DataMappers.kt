@@ -55,6 +55,7 @@ fun DeviceEntity.toDomain(appleAirDrop: AppleAirDrop?): DeviceData {
         isPaired = isPaired,
         servicesUuids = serviceUuids,
         rowDataEncoded = rowDataEncoded,
+        metadata = metadata?.let { Json.decodeFromString(it) }
     )
 }
 
@@ -77,6 +78,7 @@ fun DeviceData.toData(): DeviceEntity {
         isPaired = isPaired,
         serviceUuids = servicesUuids,
         rowDataEncoded = rowDataEncoded,
+        metadata = metadata?.let { Json.encodeToString(it) }
     )
 }
 

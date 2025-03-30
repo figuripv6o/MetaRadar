@@ -10,6 +10,7 @@
     <string name="delete">Delete</string>
     <string name="select">Select</string>
     <string name="clear">Clear</string>
+    <string name="fetch">Fetch</string>
     <string name="decline">Decline</string>
     <string name="ok">OK</string>
     <string name="turn_on">Turn on</string>
@@ -269,6 +270,7 @@
     <string name="device_details_connect">Connect</string>
     <string name="device_details_disconnect">Disconnect</string>
     <string name="read">Read</string>
+    <string name="device_details_metadata">Metadata</string>
 
     <!-- Main Screen -->
     <string name="menu_device_list">Device list</string>
