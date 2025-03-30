@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -156,6 +158,30 @@ fun rememberTimeDialog(
     ) {
         timepicker(is24HourClock = true, initialTime = initialTime, colors = timePickerColors) { localDate ->
             dateResult.invoke(localDate)
+        }
+    }
+    return dialogState
+}
+
+@Composable
+fun rememberProgressDialog(
+    text: String,
+): MaterialDialogState {
+    val dialogState = rememberMaterialDialogState()
+    ThemedDialog(
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+        dialogState = dialogState,
+        autoDismiss = false,
+        buttons = {},
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(text = text, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            CircularProgressIndicator()
         }
     }
     return dialogState

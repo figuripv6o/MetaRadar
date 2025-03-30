@@ -23,6 +23,7 @@ import f.cking.software.data.database.entity.LocationEntity
 import f.cking.software.data.database.entity.RadarProfileEntity
 import f.cking.software.data.database.entity.TagEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -107,8 +108,12 @@ abstract class AppDatabase : RoomDatabase() {
     }
 
     companion object {
+        val loadDatabase = MutableStateFlow(false)
+
         fun build(context: Context, name: String): AppDatabase {
-            return Room.databaseBuilder(context, AppDatabase::class.java, name)
+            loadDatabase.tryEmit(true)
+            Timber.d("Build database: $name")
+            val database = Room.databaseBuilder(context, AppDatabase::class.java, name)
                 .addMigrations(
                     MIGRATION_2_3,
                     MIGRATION_3_4,
@@ -122,6 +127,9 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_15_16,
                 )
                 .build()
+            Timber.d("Database is ready!")
+            loadDatabase.tryEmit(false)
+            return database
         }
 
         private val MIGRATION_2_3 = migration(2, 3) {
@@ -206,7 +214,9 @@ abstract class AppDatabase : RoomDatabase() {
         ): Migration {
             return object : Migration(from, to) {
                 override fun migrate(database: SupportSQLiteDatabase) {
+                    loadDatabase.value = true
                     migrationFun.invoke(database)
+                    loadDatabase.value = false
                 }
             }
         }
