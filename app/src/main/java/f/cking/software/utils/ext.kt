@@ -204,3 +204,8 @@ suspend fun <T, R> List<T>.mapParallel(transform: suspend (T) -> R): List<R> {
         map { async { transform(it) } }.awaitAll()
     }
 }
+
+fun extract16BitUuid(fullUuid: String): String? {
+    val regex = Regex("^0000([0-9a-fA-F]{4})-0000-1000-8000-00805f9b34fb$")
+    return regex.find(fullUuid)?.groupValues?.get(1)
+}
