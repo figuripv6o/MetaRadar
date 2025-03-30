@@ -11,7 +11,7 @@ import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import f.cking.software.R
 import f.cking.software.data.helpers.IntentHelper.ScreenNavigation
-import f.cking.software.domain.interactor.CheckProfileDetectionInteractor
+import f.cking.software.domain.interactor.CheckBatchForRadarMatchesInteractor
 import f.cking.software.ui.MainActivity
 import kotlin.random.Random
 
@@ -70,7 +70,7 @@ class NotificationsHelper(
             .build()
     }
 
-    fun notifyRadarProfile(profiles: List<CheckProfileDetectionInteractor.ProfileResult>) {
+    fun notifyRadarProfile(profiles: List<CheckBatchForRadarMatchesInteractor.ProfileResult>) {
         val title = if (profiles.count() == 1) {
             val profile = profiles.first()
             context.getString(R.string.notification_profile_is_near_you, profile.profile.name)

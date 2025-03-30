@@ -12,10 +12,9 @@ import f.cking.software.data.helpers.LocationProvider
 import f.cking.software.data.helpers.NotificationsHelper
 import f.cking.software.data.helpers.PermissionHelper
 import f.cking.software.data.helpers.PowerModeHelper
-import f.cking.software.domain.interactor.AnalyseScanBatchInteractor
-import f.cking.software.domain.interactor.CheckProfileDetectionInteractor
+import f.cking.software.domain.interactor.CheckBatchForRadarMatchesInteractor
+import f.cking.software.domain.interactor.SaveOrMergeBatchInteractor
 import f.cking.software.domain.interactor.SaveReportInteractor
-import f.cking.software.domain.interactor.SaveScanBatchInteractor
 import f.cking.software.domain.model.BleScanDevice
 import f.cking.software.domain.model.JournalEntry
 import kotlinx.coroutines.CoroutineScope
@@ -42,8 +41,8 @@ class BgScanService : Service() {
     private val notificationsHelper: NotificationsHelper by inject()
     private val powerModeHelper: PowerModeHelper by inject()
 
-    private val saveScanBatchInteractor: SaveScanBatchInteractor by inject()
-    private val analyseScanBatchInteractor: AnalyseScanBatchInteractor by inject()
+    private val saveOrMergeBatchInteractor: SaveOrMergeBatchInteractor by inject()
+    private val checkBatchForRadarMatchesInteractor: CheckBatchForRadarMatchesInteractor by inject()
     private val saveReportInteractor: SaveReportInteractor by inject()
 
     private val handler = Handler(Looper.getMainLooper())
@@ -208,19 +207,21 @@ class BgScanService : Service() {
 
         return try {
             updateState(ScannerState.ANALYZING)
-            val analyseResult = analyseScanBatchInteractor.execute(batch)
-            withContext(Dispatchers.Default) {
-                saveScanBatchInteractor.execute(batch)
+            val savingResult = withContext(Dispatchers.Default) {
+                saveOrMergeBatchInteractor.execute(batch)
             }
 
+            val matchedProfiles = checkBatchForRadarMatchesInteractor.execute(savingResult.savedBatch)
+
+            Timber.d("Background scan result: known_devices_count=${savingResult.knownDevicesCount}, matched_profiles=${matchedProfiles.count()}")
             withContext(Dispatchers.Main) {
-                handleAnalysResult(analyseResult)
+                handleProfileCheckingResult(matchedProfiles)
             }
 
             failureScanCounter.set(0)
 
-            if (analyseResult.knownDevicesCount > 0) {
-                NotificationsHelper.ServiceNotificationContent.KnownDevicesAround(analyseResult.knownDevicesCount)
+            if (savingResult.knownDevicesCount > 0) {
+                NotificationsHelper.ServiceNotificationContent.KnownDevicesAround(savingResult.knownDevicesCount)
             } else {
                 NotificationsHelper.ServiceNotificationContent.TotalDevicesAround(batch.size)
             }
@@ -230,15 +231,10 @@ class BgScanService : Service() {
         }
     }
 
-    private fun handleProfileCheckingResult(profiles: List<CheckProfileDetectionInteractor.ProfileResult>) {
+    private fun handleProfileCheckingResult(profiles: List<CheckBatchForRadarMatchesInteractor.ProfileResult>) {
         if (profiles.isNotEmpty()) {
             notificationsHelper.notifyRadarProfile(profiles)
         }
-    }
-
-    private fun handleAnalysResult(result: AnalyseScanBatchInteractor.Result) {
-        Timber.d("Background scan result: known_devices_count=${result.knownDevicesCount}, matched_profiles=${result.matchedProfiles.count()}")
-        handleProfileCheckingResult(result.matchedProfiles)
     }
 
     private fun scheduleNextScan() {

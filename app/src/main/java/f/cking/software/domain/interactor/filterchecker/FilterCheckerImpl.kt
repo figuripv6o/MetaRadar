@@ -1,5 +1,6 @@
 package f.cking.software.domain.interactor.filterchecker
 
+import f.cking.software.BuildConfig
 import f.cking.software.checkRegexSafe
 import f.cking.software.data.helpers.PowerModeHelper
 import f.cking.software.data.repo.DevicesRepository
@@ -17,6 +18,9 @@ class FilterCheckerImpl(
     private val checkDeviceLocationHistoryInteractor: CheckDeviceLocationHistoryInteractor,
     private val checkUserLocationHistoryInteractor: CheckUserLocationHistoryInteractor,
 ) : FilterChecker<RadarProfile.Filter>(powerModeHelper) {
+
+    private val statistics = mutableMapOf<String, StatData>()
+    data class StatData(val name: String, val total: Long, val count: Int, val avg: Long)
 
     private val internalFilters: MutableList<FilterChecker<*>> = mutableListOf()
 
@@ -121,7 +125,13 @@ class FilterCheckerImpl(
 
         val filter = object : FilterChecker<T>(powerModeHelper) {
             override suspend fun checkInternal(deviceData: DeviceData, filter: T): Boolean {
-                return check.invoke(deviceData, filter)
+                val start = System.currentTimeMillis()
+                val result = check.invoke(deviceData, filter)
+
+                if (BuildConfig.DEBUG) {
+                    saveStatistic(filter::class.java.simpleName, System.currentTimeMillis() - start)
+                }
+                return result
             }
 
             override fun useCache(): Boolean {
@@ -132,5 +142,25 @@ class FilterCheckerImpl(
         internalFilters.add(filter)
 
         return filter
+    }
+
+    private fun saveStatistic(filterName: String, duration: Long) {
+        val currentStat = statistics[filterName]
+        val updated = if (currentStat == null) {
+            StatData(filterName, duration, 1, duration)
+        } else {
+            StatData(filterName, currentStat.total + duration, currentStat.count + 1, (currentStat.total + duration) / (currentStat.count + 1))
+        }
+        statistics[filterName] = updated
+    }
+
+    fun invalidateStatistics() {
+        statistics.clear()
+    }
+
+    fun captureStatistic(): List<StatData> {
+        return statistics.values.toList().apply {
+            invalidateStatistics()
+        }
     }
 }

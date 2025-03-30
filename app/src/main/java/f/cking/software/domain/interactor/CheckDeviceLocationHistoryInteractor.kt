@@ -3,6 +3,7 @@ package f.cking.software.domain.interactor
 import f.cking.software.data.repo.LocationRepository
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.LocationModel
+import timber.log.Timber
 
 class CheckDeviceLocationHistoryInteractor(
     private val locationRepository: LocationRepository,
@@ -25,7 +26,10 @@ class CheckDeviceLocationHistoryInteractor(
         toTime: Long,
     ): Boolean {
 
+        Timber.tag(TAG).d("Checking device location history for device: ${device.address}")
+
         if (toTime < device.firstDetectTimeMs || fromTime > device.lastDetectTimeMs) {
+            Timber.tag(TAG).d("Time didn't match: ${device.address}")
             return false
         }
 
@@ -35,8 +39,14 @@ class CheckDeviceLocationHistoryInteractor(
             toTime = toTime
         )
 
+        Timber.tag(TAG).d("Locations count: ${locations.size}, device: ${device.address}")
+
         return locations.any { location ->
             location.distanceTo(targetLocation) <= radius
         }
+    }
+
+    companion object {
+        private const val TAG = "CheckDeviceLocationHistoryInteractor"
     }
 }
