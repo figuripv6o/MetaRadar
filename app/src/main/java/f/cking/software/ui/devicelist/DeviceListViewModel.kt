@@ -22,6 +22,7 @@ import f.cking.software.domain.interactor.filterchecker.FilterCheckerImpl
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
+import f.cking.software.mapParallel
 import f.cking.software.service.BgScanService
 import f.cking.software.ui.ScreenNavigationCommands
 import f.cking.software.ui.devicelist.DeviceListViewModel.ActiveScannerExpandedState.entries
@@ -31,11 +32,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.ext.getFullName
-import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 class DeviceListViewModel(
@@ -153,27 +155,12 @@ class DeviceListViewModel(
         scannerObservingJob = observeAllDevices()
     }
 
-    private fun enablePagination() {
-        isPaginationEnabled = true
-        currentPage = INITIAL_PAGE
-        viewModelScope.launch {
-            loadNextPage()
-        }
-    }
-
     fun onBackgraundLocationWarningClick() {
         router.navigate(ScreenNavigationCommands.OpenBackgroundLocationScreen)
     }
 
     fun onHideBackgroundLocationWarningClick() {
         settingsRepository.setHideBackgroundLocationWarning(System.currentTimeMillis())
-    }
-
-    fun onScrollEnd() {
-        if (isPaginationEnabled && !isLoading) {
-            currentPage++
-            loadNextPage()
-        }
     }
 
     private fun checkBackgroundWarningIsExpired(hideMessageTime: Long): Boolean {
@@ -186,26 +173,6 @@ class DeviceListViewModel(
         currentBatchViewState = currentBatchViewState?.sortedWith(strategy.comparator)
     }
 
-    private fun loadNextPage() {
-        viewModelScope.launch {
-            isLoading = true
-            val offset = currentPage * PAGE_SIZE
-            val limit = PAGE_SIZE
-            val devices = devicesRepository.getPaginated(offset, limit)
-            devicesViewState = if (currentPage == INITIAL_PAGE) {
-                devices
-            } else {
-                (devicesViewState + devices)
-            }.sortedWith(GENERAL_COMPARATOR)
-            if (devices.isEmpty()) {
-                isPaginationEnabled = false
-            }
-            isLoading = false
-            showEnjoyTheAppIfNeeded()
-            Timber.d("Load next page: $currentPage, offset: $offset, limit: $limit, devices: ${devices.size}")
-        }
-    }
-
     @ExperimentalCoroutinesApi
     private fun observeCurrentBatch(): Job {
         return viewModelScope.launch {
@@ -214,16 +181,13 @@ class DeviceListViewModel(
                 searchQuery,
                 devicesRepository.observeLastBatch()
                     .onStart {
-                        isLoading = true
                         currentBatchViewState = emptyList()
                         devicesRepository.clearLastBatch()
                     }
             ) { filters, query, devices ->
-                isLoading = true
                 val devices = devices
                     .withFilters(filters, query)
                     .sortedWith(currentBatchSortingStrategy.comparator)
-                isLoading = false
                 devices
             }
                 .collect { devices ->
@@ -232,27 +196,31 @@ class DeviceListViewModel(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeAllDevices(): Job {
         return viewModelScope.launch {
             combine(
                 appliedFilter,
                 searchQuery,
                 devicesRepository.observeAllDevices(),
-            ) { filters, query, devices ->
-                withContext(Dispatchers.Default) {
-                    isLoading = true
-                    val result = devices
-                        .withFilters(filters, query)
-                        .sortedWith(GENERAL_COMPARATOR)
-                        .apply { showEnjoyTheAppIfNeeded() }
-                    isLoading = false
-                    result
+            ) { filters, query, devices -> Triple(filters, query, devices) }
+                .flatMapLatest { (filters, query, devices) ->
+                flow {
+                    val result = withContext(Dispatchers.Default) {
+                        isLoading = true
+                        devices
+                            .withFilters(filters, query)
+                            .sortedWith(GENERAL_COMPARATOR)
+                            .apply { showEnjoyTheAppIfNeeded() }
+                    }
+                    emit(result)
                 }
             }
                 .onStart {
                     isLoading = true
                 }
                 .collect { devices ->
+                    isLoading = false
                     devicesViewState = devices
                 }
         }
@@ -270,7 +238,8 @@ class DeviceListViewModel(
             }
         }
         val query = searchQuery
-        return this.filter { checkFilter(it, filter) && filterQuery(it, query) }
+        return this.mapParallel { it.takeIf { checkFilter(it, filter) && filterQuery(it, query) } }
+            .filterNotNull()
     }
 
     private suspend fun showEnjoyTheAppIfNeeded() {

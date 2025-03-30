@@ -8,10 +8,8 @@ import f.cking.software.domain.model.JournalEntry
 import f.cking.software.domain.model.RadarProfile
 import f.cking.software.domain.model.SavedDeviceHandle
 import f.cking.software.domain.toDomain
+import f.cking.software.mapParallel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -69,12 +67,6 @@ class CheckBatchForRadarMatchesInteractor(
             }
             ?.takeIf { matched -> matched.isNotEmpty() }
             ?.let { matched -> ProfileResult(profile, matched) }
-    }
-
-    suspend fun <T, R> List<T>.mapParallel(transform: suspend (T) -> R): List<R> {
-        return coroutineScope {
-            map { async { transform(it) } }.awaitAll()
-        }
     }
 
     private suspend fun saveReport(result: ProfileResult) {

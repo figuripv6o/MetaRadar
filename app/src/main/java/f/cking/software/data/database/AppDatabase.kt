@@ -44,7 +44,7 @@ import java.io.File
         AutoMigration(from = 11, to = 12),
     ],
     exportSchema = true,
-    version = 15,
+    version = 16,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -119,6 +119,7 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_12_13,
                     MIGRATION_13_14,
                     MIGRATION_14_15,
+                    MIGRATION_15_16,
                 )
                 .build()
         }
@@ -191,6 +192,11 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_14_15 = migration(14, 15) {
             it.execSQL("ALTER TABLE device ADD COLUMN row_data_encoded TEXT DEFAULT NULL;")
+        }
+
+        val MIGRATION_15_16 = migration(15, 16) {
+            it.execSQL("CREATE INDEX IF NOT EXISTS index_device_to_location ON device_to_location(device_address, location_time);")
+            it.execSQL("CREATE INDEX IF NOT EXISTS index_location_time ON location(time);")
         }
 
         private fun migration(
