@@ -179,6 +179,12 @@ class BleScannerHelper(
     }
 
     @SuppressLint("MissingPermission")
+    fun close(gatt: BluetoothGatt) {
+        Timber.tag(TAG_CONNECT).d("Closing connection to device ${gatt.device.address}")
+        gatt.close()
+    }
+
+    @SuppressLint("MissingPermission")
     fun readCharacteristic(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
         Timber.tag(TAG_CONNECT).d("Reading characteristic ${characteristic.uuid}")
         val isSuccess = gatt.readCharacteristic(characteristic)

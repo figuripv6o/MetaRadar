@@ -310,7 +310,7 @@ object DeviceDetailsScreen {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_name), fontWeight = FontWeight.Bold)
-                    Text(text = deviceData.name ?: stringResource(R.string.not_applicable))
+                    Text(text = deviceData.resolvedName ?: stringResource(R.string.not_applicable))
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_address), fontWeight = FontWeight.Bold)
@@ -375,7 +375,7 @@ object DeviceDetailsScreen {
                 Column {
                     metadata?.deviceName?.let { Text(text = it) }
                     metadata?.manufacturerName?.let { Text(text = it) }
-                    metadata?.moderNumber?.let { Text(text = it) }
+                    metadata?.modelNumber?.let { Text(text = it) }
                     metadata?.serialNumber?.let { Text(text = it) }
                     metadata?.batteryLevel?.let { Text(text = "$it %") }
                 }

@@ -121,7 +121,7 @@ object BuildDeviceClassFromSystemInfo {
 
     private fun getCategoryByDeviceName(deviceData: DeviceData): DeviceClass {
         return NAME_SUBSTRING_TO_TYPE.entries.firstOrNull { (substring, _) ->
-            deviceData.name.orEmpty().contains(substring, ignoreCase = true)
+            deviceData.resolvedName.orEmpty().contains(substring, ignoreCase = true)
         }?.value ?: DeviceClass.Unknown
     }
 
@@ -180,5 +180,7 @@ object BuildDeviceClassFromSystemInfo {
         "meta quest" to DeviceClass.Wearable.Glasses,
         " TV" to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
         "TV " to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
+        "MacBook" to DeviceClass.Computer.Laptop,
+        "Mac" to DeviceClass.Computer.Desktop,
     )
 }

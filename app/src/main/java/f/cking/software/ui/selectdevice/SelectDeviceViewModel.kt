@@ -23,7 +23,7 @@ class SelectDeviceViewModel(
     private val generalComparator = Comparator<DeviceData> { second, first ->
         when {
             first.lastDetectTimeMs != second.lastDetectTimeMs -> first.lastDetectTimeMs.compareTo(second.lastDetectTimeMs)
-            first.name != second.name -> first.name?.compareTo(second.name ?: return@Comparator 1) ?: -1
+            first.resolvedName != second.resolvedName -> first.resolvedName?.compareTo(second.resolvedName ?: return@Comparator 1) ?: -1
             first.manufacturerInfo?.name != second.manufacturerInfo?.name ->
                 first.manufacturerInfo?.name?.compareTo(second.manufacturerInfo?.name ?: return@Comparator 1) ?: -1
 
@@ -41,7 +41,7 @@ class SelectDeviceViewModel(
             devices = devicesRepository.getDevices().asSequence()
                 .filter { device ->
                     searchStr.takeIf { it.isNotBlank() }?.let { searchStr ->
-                        (device.name?.contains(searchStr, true) ?: false)
+                        (device.resolvedName?.contains(searchStr, true) ?: false)
                                 || (device.customName?.contains(searchStr, true) ?: false)
                                 || (device.manufacturerInfo?.name?.contains(searchStr, true) ?: false)
                                 || device.address.contains(searchStr, true)

@@ -12,10 +12,17 @@ import kotlinx.serialization.Serializable
 data class DeviceMetadata(
     val deviceName: String? = null,
     val manufacturerName: String? = null,
-    val moderNumber: String? = null,
+    val modelNumber: String? = null,
     val serialNumber: String? = null,
     val batteryLevel: Int? = null,
 ) {
+
+    fun buildDisplayName(): String? {
+        return when {
+            !deviceName.isNullOrEmpty() && modelNumber?.contains(deviceName) == true -> modelNumber
+            else -> deviceName ?: modelNumber
+        }
+    }
 
     enum class ServiceTypes(val uuid: String) {
         GENERIC_ACCESS("1800"),
@@ -46,7 +53,7 @@ fun DeviceMetadata?.isNullOrEmpty(): Boolean {
     if (this == null) return true
     return deviceName.isNullOrEmpty()
             && manufacturerName.isNullOrEmpty()
-            && moderNumber.isNullOrEmpty()
+            && modelNumber.isNullOrEmpty()
             && serialNumber.isNullOrEmpty()
             && batteryLevel == null
 }

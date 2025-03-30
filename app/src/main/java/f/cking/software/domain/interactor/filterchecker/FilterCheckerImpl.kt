@@ -29,8 +29,8 @@ class FilterCheckerImpl(
         device.firstDetectTimeMs in filter.from..filter.to
     }
     private val name = filterChecker<RadarProfile.Filter.Name>(useCache = true) { device, filter ->
-        val regexMatch = device.name?.checkRegexSafe(filter.name) ?: false
-        val noCaseSubstringMatch = device.name?.contains(filter.name, filter.ignoreCase) ?: false
+        val regexMatch = device.resolvedName?.checkRegexSafe(filter.name) ?: false
+        val noCaseSubstringMatch = device.resolvedName?.contains(filter.name, filter.ignoreCase) ?: false
         regexMatch || noCaseSubstringMatch
     }
     private val address = filterChecker<RadarProfile.Filter.Address>(useCache = true) { device, filter ->

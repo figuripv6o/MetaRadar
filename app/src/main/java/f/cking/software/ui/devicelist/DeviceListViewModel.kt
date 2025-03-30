@@ -303,12 +303,12 @@ class DeviceListViewModel(
 
     private fun filterQuery(device: DeviceData, query: String?): Boolean {
         return query?.takeIf { it.isNotBlank() }?.let { searchStr ->
-            (device.name?.contains(searchStr, true) ?: false)
+            (device.resolvedName?.contains(searchStr, true) ?: false)
                     || (device.customName?.contains(searchStr, true) ?: false)
                     || (device.manufacturerInfo?.name?.contains(searchStr, true) ?: false)
                     || device.address.contains(searchStr, true)
                     || device.address.checkRegexSafe(query)
-                    || (device.name?.checkRegexSafe(query) ?: false)
+                    || (device.resolvedName?.checkRegexSafe(query) ?: false)
         } ?: true
     }
 
@@ -412,7 +412,7 @@ class DeviceListViewModel(
                 first.favorite && !second.favorite -> 1
                 !first.favorite && second.favorite -> -1
 
-                first.name != second.name -> first.name?.compareTo(second.name ?: return@Comparator 1) ?: -1
+                first.resolvedName != second.resolvedName -> first.resolvedName?.compareTo(second.resolvedName ?: return@Comparator 1) ?: -1
 
                 first.rssi != second.rssi -> first.rssi?.compareTo(second.rssi ?: return@Comparator 1) ?: -1
 

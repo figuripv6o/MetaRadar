@@ -310,7 +310,7 @@ fun DeviceListItem(
                     }
                     Text(
                         modifier = Modifier.weight(1f),
-                        text = device.name ?: stringResource(R.string.not_applicable),
+                        text = device.resolvedName ?: stringResource(R.string.not_applicable),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )

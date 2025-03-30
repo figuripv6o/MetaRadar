@@ -31,12 +31,19 @@ data class DeviceData(
         BuildDeviceClassFromSystemInfo.execute(this)
     }
 
+    val resolvedName: String? by lazy {
+        metadata?.buildDisplayName() ?: name
+    }
+
     fun knownLifetime(): Long {
         return lastDetectTimeMs - firstDetectTimeMs
     }
 
     fun buildDisplayName(): String {
-        return if (!customName.isNullOrBlank()) customName else name ?: address
+        return customName?.takeIf { it.isNotBlank() }
+            ?: name
+            ?: metadata?.buildDisplayName()
+            ?: address
     }
 
     fun firstDetectionPeriod(context: Context): String {

@@ -44,7 +44,12 @@ class FetchDeviceServiceInfo(
         var metadata = device.metadata ?: DeviceMetadata()
 
         flow<DeviceMetadata> {
+            val gatt: BluetoothGatt? = null
             Timber.tag(TAG).i("Connecting to ${device.address}")
+            suspend fun submitMetadata() {
+                gatt?.let(bleScannerHelper::close)
+                emit(metadata)
+            }
             connectionStream.collect { event ->
                 when (event) {
                     is BleScannerHelper.DeviceConnectResult.Connected -> {
@@ -60,11 +65,11 @@ class FetchDeviceServiceInfo(
                                 requestCharacteristic(event.gatt, relevantCharacteristics.first())
                             } else {
                                 Timber.tag(TAG).i("No relevant characteristics found for ${device.address}")
-                                emit(metadata)
+                                submitMetadata()
                             }
                         } else {
                             Timber.tag(TAG).i("No services to request for ${device.address}")
-                            emit(metadata)
+                            submitMetadata()
                         }
                     }
                     is BleScannerHelper.DeviceConnectResult.CharacteristicRead -> {
@@ -81,7 +86,7 @@ class FetchDeviceServiceInfo(
                                 metadata.copy(manufacturerName = value.decodeToString())
                             }
                             CharacteristicType.MODEL_NUMBER -> {
-                                metadata.copy(moderNumber = value.decodeToString())
+                                metadata.copy(modelNumber = value.decodeToString())
                             }
                             CharacteristicType.SERIAL_NUMBER -> {
                                 metadata.copy(serialNumber = value.decodeToString())
@@ -95,7 +100,7 @@ class FetchDeviceServiceInfo(
 
                         if (pendingCharacteristics.isEmpty()) {
                             Timber.tag(TAG).i("All characteristics read for ${device.address}, finishing fetching...")
-                            emit(metadata)
+                            submitMetadata()
                         } else {
                             Timber.tag(TAG).i("Still pending characteristics for ${device.address}: ${pendingCharacteristics.keys}")
                             requestCharacteristic(event.gatt, pendingCharacteristics.values.first())
@@ -108,7 +113,7 @@ class FetchDeviceServiceInfo(
 
                         if (pendingCharacteristics.isEmpty()) {
                             Timber.tag(TAG).i("All characteristics read for ${device.address}, finishing fetching...")
-                            emit(metadata)
+                            submitMetadata()
                         } else {
                             Timber.tag(TAG).i("Still pending characteristics for ${device.address}: $pendingCharacteristics.keys")
                             requestCharacteristic(event.gatt, pendingCharacteristics.values.first())
@@ -116,14 +121,14 @@ class FetchDeviceServiceInfo(
                     }
                     is BleScannerHelper.DeviceConnectResult.Disconnected -> {
                         Timber.tag(TAG).i("Disconnected from ${device.address}")
-                        emit(metadata)
+                        submitMetadata()
                     }
                     else -> {
                         // do nothing
                     }
                 }
             }
-        }//.timeout(5.seconds)
+        }
     }
 
     private fun requestCharacteristic(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {

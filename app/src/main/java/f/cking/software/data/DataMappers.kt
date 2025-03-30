@@ -14,6 +14,7 @@ import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 
 fun Location.toDomain(time: Long): LocationModel {
     return LocationModel(
@@ -55,7 +56,7 @@ fun DeviceEntity.toDomain(appleAirDrop: AppleAirDrop?): DeviceData {
         isPaired = isPaired,
         servicesUuids = serviceUuids,
         rowDataEncoded = rowDataEncoded,
-        metadata = metadata?.let { Json.decodeFromString(it) }
+        metadata = metadata?.let { json.decodeFromStringOrNull(it) }
     )
 }
 
@@ -78,7 +79,7 @@ fun DeviceData.toData(): DeviceEntity {
         isPaired = isPaired,
         serviceUuids = servicesUuids,
         rowDataEncoded = rowDataEncoded,
-        metadata = metadata?.let { Json.encodeToString(it) }
+        metadata = metadata?.let { json.encodeToString(it) }
     )
 }
 
@@ -88,7 +89,7 @@ fun RadarProfile.toData(): RadarProfileEntity {
         name = name,
         description = description,
         isActive = isActive,
-        detectFilter = Json.encodeToString(detectFilter)
+        detectFilter = json.encodeToString(detectFilter)
     )
 }
 
@@ -98,7 +99,7 @@ fun RadarProfileEntity.toDomain(): RadarProfile {
         name = name,
         description = description,
         isActive = isActive,
-        detectFilter = detectFilter?.let { Json.decodeFromString(detectFilter) }
+        detectFilter = detectFilter?.let { json.decodeFromStringOrNull(detectFilter) }
     )
 }
 
@@ -123,7 +124,7 @@ fun JournalEntryEntity.toDomain(): JournalEntry {
     return JournalEntry(
         id = id,
         timestamp = timestamp,
-        report = Json.decodeFromString(report),
+        report = json.decodeFromString(report),
     )
 }
 
@@ -131,6 +132,16 @@ fun JournalEntry.toData(): JournalEntryEntity {
     return JournalEntryEntity(
         id = id,
         timestamp = timestamp,
-        report = Json.encodeToString(report),
+        report = json.encodeToString(report),
     )
+}
+
+private val json = Json { ignoreUnknownKeys = true }
+private inline fun <reified T> Json.decodeFromStringOrNull(str: String, ignoreUnknown: Boolean = true): T? {
+    return try {
+        decodeFromString<T>(str)
+    } catch (e: Exception) {
+        Timber.e(e)
+        null
+    }
 }
