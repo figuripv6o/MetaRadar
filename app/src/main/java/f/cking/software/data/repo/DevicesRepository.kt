@@ -133,24 +133,17 @@ class DevicesRepository(
 
     private suspend fun saveDevices(devices: List<DeviceData>) {
         withContext(Dispatchers.IO) {
-            val mappedDevices = mergeWithExistingDevices(devices).map { it.toData() }
-            deviceDao.insertAll(mappedDevices)
+            deviceDao.insertAll(devices.map { it.toData() })
         }
     }
 
     private suspend fun saveContacts(devices: List<DeviceData>) {
         withContext(Dispatchers.IO) {
-            val addressesMap = devices.flatMap { device ->
-                device.manufacturerInfo?.airdrop?.contacts?.map { it.sha256 to device.address }
-                    ?: emptyList()
-            }.toMap()
-            val mergedContacts = mergeWithExisting(devices.flatMap {
-                    it.manufacturerInfo?.airdrop?.contacts ?: emptyList()
-                })
-            val mappedContacts = mergedContacts.mapNotNull { contact ->
-                    addressesMap[contact.sha256]?.let { contact.toData(it) }
-                }
-            appleContactsDao.insertAll(mappedContacts)
+            val contacts = devices.flatMap { device ->
+                device.manufacturerInfo?.airdrop?.contacts?.map { it.toData(device.address) } ?: emptyList()
+            }
+
+            appleContactsDao.insertAll(contacts)
         }
     }
 
@@ -164,24 +157,6 @@ class DevicesRepository(
                 val data = getDevices()
                 allDevices.emit(data)
             }
-        }
-    }
-
-    private suspend fun mergeWithExistingDevices(devices: List<DeviceData>): List<DeviceData> {
-        val existingDevices = getAllByAddresses(devices.map { it.address })
-        return devices.map { device ->
-            val existing = existingDevices.firstOrNull { it.address == device.address }
-            existing?.mergeWithNewDetected(device) ?: device
-        }
-    }
-
-    private suspend fun mergeWithExisting(
-        contacts: List<AppleAirDrop.AppleContact>,
-    ): List<AppleAirDrop.AppleContact> {
-        val existingContacts = getAllBySHA(contacts.map { it.sha256 })
-        return contacts.map { contact ->
-            val existing = existingContacts.firstOrNull { it.sha256 == contact.sha256 }
-            existing?.mergeWithNewContact(contact) ?: contact
         }
     }
 

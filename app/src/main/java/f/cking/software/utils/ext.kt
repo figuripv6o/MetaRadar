@@ -15,6 +15,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -194,4 +197,10 @@ fun ByteArray.toBase64(): String {
 
 fun String.fromBase64(): ByteArray {
     return Base64.decode(this, Base64.NO_WRAP)
+}
+
+suspend fun <T, R> List<T>.mapParallel(transform: suspend (T) -> R): List<R> {
+    return coroutineScope {
+        map { async { transform(it) } }.awaitAll()
+    }
 }

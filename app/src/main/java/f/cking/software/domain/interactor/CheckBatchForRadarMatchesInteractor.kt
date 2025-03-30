@@ -1,66 +1,70 @@
 package f.cking.software.domain.interactor
 
 import f.cking.software.data.helpers.LocationProvider
-import f.cking.software.data.repo.DevicesRepository
 import f.cking.software.data.repo.RadarProfilesRepository
 import f.cking.software.domain.interactor.filterchecker.FilterCheckerImpl
-import f.cking.software.domain.model.AppleAirDrop
-import f.cking.software.domain.model.BleScanDevice
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.JournalEntry
-import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
+import f.cking.software.domain.model.SavedDeviceHandle
 import f.cking.software.domain.toDomain
+import f.cking.software.mapParallel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-class CheckProfileDetectionInteractor(
-    private val devicesRepository: DevicesRepository,
+class CheckBatchForRadarMatchesInteractor(
     private val radarProfilesRepository: RadarProfilesRepository,
-    private val buildDeviceFromScanDataInteractor: BuildDeviceFromScanDataInteractor,
     private val filterChecker: FilterCheckerImpl,
     private val saveReportInteractor: SaveReportInteractor,
     private val locationProvider: LocationProvider,
 ) {
 
-    suspend fun execute(batch: List<BleScanDevice>): List<ProfileResult> {
+    suspend fun execute(batch: List<SavedDeviceHandle>): List<ProfileResult> {
         return withContext(Dispatchers.Default) {
             val checkStartTime = System.currentTimeMillis()
-            val existingDevices = devicesRepository.getAllByAddresses(batch.map { it.address })
 
-            val devices = batch.map { found ->
-                val mappedFound = buildDeviceFromScanDataInteractor.execute(found)
-                val existing = existingDevices.firstOrNull { it.address == found.address }
-                existing?.copy(manufacturerInfo = mapManufacturerInfo(mappedFound.manufacturerInfo)) ?: mappedFound
+            // Use original previous detection time for device and it's airdrop info
+            // This is needed to correctly process radar profiles that are based on last detection time
+            val adjustedDevices = batch.map { handle ->
+                handle.device.copy(
+                    lastDetectTimeMs = handle.previouslySeenAtTime,
+                    manufacturerInfo = handle.device.manufacturerInfo?.let { manufacturerInfo ->
+                        manufacturerInfo.copy(
+                            airdrop = manufacturerInfo.airdrop?.let { airdrop ->
+                                airdrop.copy(
+                                    contacts = airdrop.contacts.map { contact ->
+                                        val originalLastDetectionTime = handle.airdrop?.contactShaToPreviouslySeenAtTime[contact.sha256]
+                                        contact.copy(lastDetectionTimeMs = originalLastDetectionTime ?: handle.previouslySeenAtTime)
+                                    }
+                                )
+                            }
+                        )
+                    }
+                )
             }
+
             val allProfiles = radarProfilesRepository.getAllProfiles()
 
-            val result = allProfiles.mapNotNull { profile ->
-                checkProfile(profile, devices)
-            }
+            val result = allProfiles.mapParallel { profile ->
+                checkProfile(profile, adjustedDevices)
+            }.filterNotNull()
 
             result.forEach { saveReport(it) }
 
             val totalDuration = System.currentTimeMillis() - checkStartTime
-            Timber.i("Radar detection check: ${result.size} profiles detected. Duration $totalDuration ms")
+            Timber.tag(TAG).i("Radar detection check: ${result.size} profiles detected. Duration $totalDuration ms")
             result
         }
     }
 
-    private suspend fun mapManufacturerInfo(found: ManufacturerInfo?): ManufacturerInfo? {
-        val airdrop = found?.airdrop ?: return found
-        val existingContacts = devicesRepository.getAllBySHA(airdrop.contacts.map { it.sha256 })
-        val mergedContacts = airdrop.contacts.map { contact ->
-            val existing = existingContacts.firstOrNull { it.sha256 == contact.sha256 }
-            existing ?: contact
-        }
-        return found.copy(airdrop = AppleAirDrop(mergedContacts))
-    }
-
     private suspend fun checkProfile(profile: RadarProfile, devices: List<DeviceData>): ProfileResult? {
         return profile.takeIf { it.isActive }
-            ?.let { devices.filter { device -> profile.detectFilter?.let { filterChecker.check(device, it) } == true } }
+            ?.let {
+                devices.mapParallel { device ->
+                    device.takeIf { profile.detectFilter?.let { filterChecker.check(device, it) } == true }
+                }.filterNotNull()
+            }
             ?.takeIf { matched -> matched.isNotEmpty() }
             ?.let { matched -> ProfileResult(profile, matched) }
     }
@@ -81,4 +85,8 @@ class CheckProfileDetectionInteractor(
         val profile: RadarProfile,
         val matched: List<DeviceData>,
     )
+
+    companion object {
+        private const val TAG = "CheckBatchForRadarMatchesInteractor"
+    }
 }

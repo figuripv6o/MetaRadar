@@ -109,9 +109,6 @@ object DeviceListScreen {
             object : NestedScrollConnection {
                 override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                     focusManager.clearFocus(true)
-                    if (viewModel.devicesViewState.isNotEmpty() && state.layoutInfo.visibleItemsInfo.any { it.contentType == ListContentType.PAGINATION_PROGRESS }) {
-                        viewModel.onScrollEnd()
-                    }
                     return super.onPreScroll(available, source)
                 }
             }
