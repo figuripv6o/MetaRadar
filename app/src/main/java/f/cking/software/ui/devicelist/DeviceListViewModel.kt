@@ -19,6 +19,7 @@ import f.cking.software.data.repo.SettingsRepository
 import f.cking.software.domain.interactor.CheckNeedToShowEnjoyTheAppInteractor
 import f.cking.software.domain.interactor.EnjoyTheAppAskLaterInteractor
 import f.cking.software.domain.interactor.filterchecker.FilterCheckerImpl
+import f.cking.software.domain.model.DeviceClass
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
@@ -377,11 +378,13 @@ class DeviceListViewModel(
                 else -> GENERAL_COMPARATOR.compare(first, second)
             }
         }, R.string.sort_type_by_distance),
-        BY_TYPE(Comparator { second, first ->
+        BY_TYPE(Comparator { first, second ->
             val firstType = first.resolvedDeviceClass
             val secondType = second.resolvedDeviceClass
             when {
-                firstType != secondType -> secondType::class.getFullName().compareTo(firstType::class.getFullName())
+                firstType !is DeviceClass.Unknown && secondType is DeviceClass.Unknown -> -1
+                firstType is DeviceClass.Unknown && secondType !is DeviceClass.Unknown -> 1
+                firstType != secondType -> firstType::class.getFullName().compareTo(secondType::class.getFullName())
                 else -> GENERAL_COMPARATOR.compare(first, second)
             }
         }, R.string.sort_type_by_device_type)
