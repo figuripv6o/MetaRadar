@@ -48,9 +48,9 @@ class CheckBatchForRadarMatchesInteractor(
 
             val allProfiles = radarProfilesRepository.getAllProfiles()
 
-            val result = allProfiles.mapNotNull { profile ->
+            val result = allProfiles.mapParallel { profile ->
                 checkProfile(profile, adjustedDevices)
-            }
+            }.filterNotNull()
 
             result.forEach { saveReport(it) }
 
@@ -61,9 +61,7 @@ class CheckBatchForRadarMatchesInteractor(
     }
 
     private suspend fun checkProfile(profile: RadarProfile, devices: List<DeviceData>): ProfileResult? {
-        val start = System.currentTimeMillis()
-
-        val result = profile.takeIf { it.isActive }
+        return profile.takeIf { it.isActive }
             ?.let {
                 devices.mapParallel { device ->
                     device.takeIf { profile.detectFilter?.let { filterChecker.check(device, it) } == true }
@@ -71,30 +69,12 @@ class CheckBatchForRadarMatchesInteractor(
             }
             ?.takeIf { matched -> matched.isNotEmpty() }
             ?.let { matched -> ProfileResult(profile, matched) }
-
-        if (false) {
-            logStatistic(profile, result, System.currentTimeMillis() - start)
-        }
-
-        return result
     }
 
-    suspend fun <T> List<T>.mapParallel(transform: suspend (T) -> T?): List<T?> {
+    suspend fun <T, R> List<T>.mapParallel(transform: suspend (T) -> R): List<R> {
         return coroutineScope {
             map { async { transform(it) } }.awaitAll()
         }
-    }
-
-    private fun logStatistic(profile: RadarProfile, result: ProfileResult?, duration: Long) {
-        val sb = StringBuilder()
-        val statistics = filterChecker.captureStatistic()
-
-        sb.append("Profile ${profile.name} detected ${result?.matched?.size ?: 0} devices. Total duration $duration:")
-        statistics.sortedBy { it.total }.reversed().forEach { stat ->
-            sb.append("\n      ${stat.name}: count: ${stat.count}; total: (${stat.total} ms; avg: ${stat.avg} ms)")
-        }
-        sb.append("\n")
-        Timber.tag(TAG).d(sb.toString())
     }
 
     private suspend fun saveReport(result: ProfileResult) {
