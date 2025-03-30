@@ -1,6 +1,5 @@
 package f.cking.software.domain.interactor
 
-import f.cking.software.BuildConfig
 import f.cking.software.data.helpers.LocationProvider
 import f.cking.software.data.repo.RadarProfilesRepository
 import f.cking.software.domain.interactor.filterchecker.FilterCheckerImpl
@@ -10,6 +9,9 @@ import f.cking.software.domain.model.RadarProfile
 import f.cking.software.domain.model.SavedDeviceHandle
 import f.cking.software.domain.toDomain
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -62,15 +64,25 @@ class CheckBatchForRadarMatchesInteractor(
         val start = System.currentTimeMillis()
 
         val result = profile.takeIf { it.isActive }
-            ?.let { devices.filter { device -> profile.detectFilter?.let { filterChecker.check(device, it) } == true } }
+            ?.let {
+                devices.mapParallel { device ->
+                    device.takeIf { profile.detectFilter?.let { filterChecker.check(device, it) } == true }
+                }.filterNotNull()
+            }
             ?.takeIf { matched -> matched.isNotEmpty() }
             ?.let { matched -> ProfileResult(profile, matched) }
 
-        if (BuildConfig.DEBUG) {
+        if (false) {
             logStatistic(profile, result, System.currentTimeMillis() - start)
         }
 
         return result
+    }
+
+    suspend fun <T> List<T>.mapParallel(transform: suspend (T) -> T?): List<T?> {
+        return coroutineScope {
+            map { async { transform(it) } }.awaitAll()
+        }
     }
 
     private fun logStatistic(profile: RadarProfile, result: ProfileResult?, duration: Long) {

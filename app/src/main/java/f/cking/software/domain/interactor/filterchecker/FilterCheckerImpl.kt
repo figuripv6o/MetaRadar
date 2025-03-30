@@ -1,6 +1,5 @@
 package f.cking.software.domain.interactor.filterchecker
 
-import f.cking.software.BuildConfig
 import f.cking.software.checkRegexSafe
 import f.cking.software.data.helpers.PowerModeHelper
 import f.cking.software.data.repo.DevicesRepository
@@ -10,6 +9,9 @@ import f.cking.software.domain.interactor.CheckUserLocationHistoryInteractor
 import f.cking.software.domain.model.AppleAirDrop
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.RadarProfile
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+import java.util.concurrent.ConcurrentHashMap
 
 class FilterCheckerImpl(
     private val checkDeviceIsFollowing: CheckDeviceIsFollowingInteractor,
@@ -19,7 +21,7 @@ class FilterCheckerImpl(
     private val checkUserLocationHistoryInteractor: CheckUserLocationHistoryInteractor,
 ) : FilterChecker<RadarProfile.Filter>(powerModeHelper) {
 
-    private val statistics = mutableMapOf<String, StatData>()
+    private val statistics = MutableStateFlow(ConcurrentHashMap<String, StatData>())
     data class StatData(val name: String, val total: Long, val count: Int, val avg: Long)
 
     private val internalFilters: MutableList<FilterChecker<*>> = mutableListOf()
@@ -128,7 +130,7 @@ class FilterCheckerImpl(
                 val start = System.currentTimeMillis()
                 val result = check.invoke(deviceData, filter)
 
-                if (BuildConfig.DEBUG) {
+                if (false) {
                     saveStatistic(filter::class.java.simpleName, System.currentTimeMillis() - start)
                 }
                 return result
@@ -145,21 +147,26 @@ class FilterCheckerImpl(
     }
 
     private fun saveStatistic(filterName: String, duration: Long) {
-        val currentStat = statistics[filterName]
-        val updated = if (currentStat == null) {
-            StatData(filterName, duration, 1, duration)
-        } else {
-            StatData(filterName, currentStat.total + duration, currentStat.count + 1, (currentStat.total + duration) / (currentStat.count + 1))
+        statistics.update { statistics ->
+            val currentStat = statistics[filterName]
+            val updated = if (currentStat == null) {
+                StatData(filterName, duration, 1, duration)
+            } else {
+                StatData(filterName, currentStat.total + duration, currentStat.count + 1, (currentStat.total + duration) / (currentStat.count + 1))
+            }
+            statistics[filterName] = updated
+            statistics
         }
-        statistics[filterName] = updated
     }
 
     fun invalidateStatistics() {
-        statistics.clear()
+        statistics.update {
+            it.apply { clear() }
+        }
     }
 
     fun captureStatistic(): List<StatData> {
-        return statistics.values.toList().apply {
+        return statistics.value.values.toList().apply {
             invalidateStatistics()
         }
     }
