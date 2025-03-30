@@ -98,6 +98,8 @@ class BleScannerHelper(
                         if (gatt != null) {
                             Timber.tag(TAG_CONNECT).d("Services discovered. ${gatt.services.size} services for device $address")
                             services.addAll(gatt.services.orEmpty())
+                        } else {
+                            Timber.tag(TAG_CONNECT).e("Error while discovering services for device $address. Gatt is null")
                         }
                         trySend(DeviceConnectResult.AvailableServices(services.toList()))
                     }
@@ -108,6 +110,8 @@ class BleScannerHelper(
                     if (status == BluetoothGatt.GATT_SUCCESS) {
                         Timber.tag(TAG_CONNECT).d("Characteristic read. ${characteristic.uuid}, value: ${value.decodeToString()}")
                         trySend(DeviceConnectResult.CharacteristicRead(characteristic, value.toBase64()))
+                    } else {
+                        Timber.tag(TAG_CONNECT).e("Error while reading characteristic ${characteristic.uuid}. Error code: $status")
                     }
                 }
 

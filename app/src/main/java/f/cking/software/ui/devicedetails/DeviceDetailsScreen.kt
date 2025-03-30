@@ -419,7 +419,7 @@ object DeviceDetailsScreen {
                 Text(value)
                 Text(valueHex)
             } else {
-                TagChip(stringResource(R.string.read)) { viewModel.readService(characteristic.gatt) }
+                TagChip(stringResource(R.string.read)) { viewModel.readCharacteristic(characteristic.gatt) }
             }
         }
     }

@@ -117,58 +117,64 @@ class DeviceDetailsViewModel(
                     connectionStatus = ConnectionStatus.DISCONNECTED
                 }
                 .collect { result ->
-                    when (result) {
-                        is BleScannerHelper.DeviceConnectResult.Connected -> {
-                            connectionStatus = ConnectionStatus.CONNECTED(result.gatt)
-                            discoverServices(result.gatt)
-                        }
-                        is BleScannerHelper.DeviceConnectResult.Connecting -> {
-                            connectionStatus = ConnectionStatus.CONNECTING
-                        }
-                        is BleScannerHelper.DeviceConnectResult.Disconnected -> {
-                            connectionStatus = ConnectionStatus.DISCONNECTED
-                        }
-                        is BleScannerHelper.DeviceConnectResult.Disconnecting -> {
-                            connectionStatus = ConnectionStatus.DISCONNECTING
-                        }
-                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError -> {
-                            Timber.e(RuntimeException("Error while connecting to device, error code ${result.errorCode}"))
-                            connectionStatus = ConnectionStatus.DISCONNECTED
-                        }
+                    handleBleConnectResult(result)
+                }
+        }
+    }
 
-                        // services update
-                        is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
-                            addServices(result.services.map { mapService(it) }.toSet())
-                            result.services.forEach { it.characteristics.forEach { readDescription(it) } }
-                        }
-                        is BleScannerHelper.DeviceConnectResult.CharacteristicRead -> {
-                            val updatedServices = services.map { service ->
-                                val updatedCharacteristics = service.characteristics.map { characteristic ->
-                                    if (characteristic.uuid == result.characteristic.uuid.toString()) {
-                                        mapCharacteristic(result.characteristic, result.valueEncoded64.fromBase64())
-                                    } else {
-                                        characteristic
-                                    }
-                                }
-                                service.copy(characteristics = updatedCharacteristics)
-                            }
-                            addServices(updatedServices.toSet())
-                        }
-                        is BleScannerHelper.DeviceConnectResult.DescriptorRead -> {
-                            val updatedServices = services.map { service ->
-                                val updatedCharacteristics = service.characteristics.map { characteristic ->
-                                    if (characteristic.gatt.descriptors.any { it.uuid == result.descriptor.uuid }) {
-                                        mapCharacteristic(characteristic.gatt, characteristic.encodedValue?.fromBase64(), result.valueEncoded64.fromBase64())
-                                    } else {
-                                        characteristic
-                                    }
-                                }
-                                service.copy(characteristics = updatedCharacteristics)
-                            }
-                            addServices(updatedServices.toSet())
+    private fun handleBleConnectResult(result: BleScannerHelper.DeviceConnectResult) {
+        when (result) {
+            is BleScannerHelper.DeviceConnectResult.Connected -> {
+                connectionStatus = ConnectionStatus.CONNECTED(result.gatt)
+                discoverServices(result.gatt)
+            }
+            is BleScannerHelper.DeviceConnectResult.Connecting -> {
+                connectionStatus = ConnectionStatus.CONNECTING
+            }
+            is BleScannerHelper.DeviceConnectResult.Disconnected -> {
+                connectionStatus = ConnectionStatus.DISCONNECTED
+                connectionJob?.cancel()
+            }
+            is BleScannerHelper.DeviceConnectResult.Disconnecting -> {
+                connectionStatus = ConnectionStatus.DISCONNECTING
+            }
+            is BleScannerHelper.DeviceConnectResult.DisconnectedWithError -> {
+                Timber.e(RuntimeException("Error while connecting to device, error code ${result.errorCode}"))
+                connectionStatus = ConnectionStatus.DISCONNECTED
+                connectionJob?.cancel()
+            }
+
+            // services update
+            is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
+                addServices(result.services.map { mapService(it) }.toSet())
+                result.services.forEach { it.characteristics.forEach { readDescription(it) } }
+            }
+            is BleScannerHelper.DeviceConnectResult.CharacteristicRead -> {
+                val updatedServices = services.map { service ->
+                    val updatedCharacteristics = service.characteristics.map { characteristic ->
+                        if (characteristic.uuid == result.characteristic.uuid.toString()) {
+                            mapCharacteristic(result.characteristic, result.valueEncoded64.fromBase64())
+                        } else {
+                            characteristic
                         }
                     }
+                    service.copy(characteristics = updatedCharacteristics)
                 }
+                addServices(updatedServices.toSet())
+            }
+            is BleScannerHelper.DeviceConnectResult.DescriptorRead -> {
+                val updatedServices = services.map { service ->
+                    val updatedCharacteristics = service.characteristics.map { characteristic ->
+                        if (characteristic.gatt.descriptors.any { it.uuid == result.descriptor.uuid }) {
+                            mapCharacteristic(characteristic.gatt, characteristic.encodedValue?.fromBase64(), result.valueEncoded64.fromBase64())
+                        } else {
+                            characteristic
+                        }
+                    }
+                    service.copy(characteristics = updatedCharacteristics)
+                }
+                addServices(updatedServices.toSet())
+            }
         }
     }
 
@@ -211,7 +217,7 @@ class DeviceDetailsViewModel(
         }
     }
 
-    fun readService(gattService: BluetoothGattCharacteristic) {
+    fun readCharacteristic(gattService: BluetoothGattCharacteristic) {
         viewModelScope.launch {
             (connectionStatus as? ConnectionStatus.CONNECTED)?.gatt?.let { gatt ->
                 try {
@@ -268,7 +274,7 @@ class DeviceDetailsViewModel(
                     if (rssi != null && distance != null) {
                         deviceState = currentDevice
                         OnlineStatus(rssi, distance)
-                    } else if (connectionStatus is ConnectionStatus.CONNECTED) {
+                    } else if (connectionStatus !is ConnectionStatus.DISCONNECTED) {
                         OnlineStatus(null, null)
                     } else {
                         null
