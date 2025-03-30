@@ -21,16 +21,21 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import f.cking.software.R
+import f.cking.software.data.database.AppDatabase
 import f.cking.software.data.helpers.ActivityProvider
 import f.cking.software.data.helpers.IntentHelper
 import f.cking.software.data.helpers.PermissionHelper
 import f.cking.software.isDarkModeOn
+import f.cking.software.utils.graphic.rememberProgressDialog
 import f.cking.software.utils.navigation.BackCommand
 import f.cking.software.utils.navigation.Navigator
 import f.cking.software.utils.navigation.RouterImpl
@@ -70,6 +75,8 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val focusManager = LocalFocusManager.current
             val colors = themeColorScheme()
+
+
             KoinContext {
                 MaterialTheme(
                     colorScheme = colors,
@@ -87,6 +94,14 @@ class MainActivity : AppCompatActivity() {
                         stack.forEach { screen ->
                             screen()
                         }
+                    }
+
+                    val preparingDatabaseDialog = rememberProgressDialog(stringResource(R.string.preparing_database))
+                    val loadingDatabase by AppDatabase.loadDatabase.collectAsState(false)
+                    if (loadingDatabase) {
+                        preparingDatabaseDialog.show()
+                    } else {
+                        preparingDatabaseDialog.hide()
                     }
                 }
             }

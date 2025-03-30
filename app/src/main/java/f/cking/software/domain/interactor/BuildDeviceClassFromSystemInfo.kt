@@ -163,6 +163,9 @@ object BuildDeviceClassFromSystemInfo {
     private val NAME_SUBSTRING_TO_TYPE = mapOf(
         "buds" to DeviceClass.AudioVideo.Headphones,
         "phone" to DeviceClass.Phone.Smartphone,
+        "pixel 8" to DeviceClass.Phone.Smartphone,
+        "pixel 9" to DeviceClass.Phone.Smartphone,
+        "pixel 7" to DeviceClass.Phone.Smartphone,
         "watch" to DeviceClass.Wearable.WristWatch,
         "STANMORE" to DeviceClass.AudioVideo.Loudspeaker,
         "MONITOR II" to DeviceClass.AudioVideo.Headphones,

@@ -15,6 +15,7 @@
     <string name="turn_on">Turn on</string>
     <string name="report">Report</string>
     <string name="shaders_test" translatable="false">Shaders test</string>
+    <string name="preparing_database">Optimizing database, it might take a minute…</string>
 
     <plurals name="day">
         <item quantity="zero">%d days</item>

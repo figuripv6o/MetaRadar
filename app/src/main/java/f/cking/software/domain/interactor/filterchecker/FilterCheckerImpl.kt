@@ -18,6 +18,8 @@ class FilterCheckerImpl(
     private val checkUserLocationHistoryInteractor: CheckUserLocationHistoryInteractor,
 ) : FilterChecker<RadarProfile.Filter>(powerModeHelper) {
 
+    data class StatData(val name: String, val total: Long, val count: Int, val avg: Long)
+
     private val internalFilters: MutableList<FilterChecker<*>> = mutableListOf()
 
     private val lastDetectionInterval = filterChecker<RadarProfile.Filter.LastDetectionInterval> { device, filter ->

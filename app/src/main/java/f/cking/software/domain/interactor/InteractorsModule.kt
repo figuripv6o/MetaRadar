@@ -6,18 +6,15 @@ import org.koin.dsl.module
 object InteractorsModule {
 
     val module = module {
-        factory { AnalyseScanBatchInteractor(get(), get()) }
+        single { FilterCheckerImpl(get(), get(), get(), get(), get()) }
+
         factory { ClearGarbageInteractor(get(), get(), get(), get()) }
-        factory { GetKnownDevicesCountInteractor(get(), get()) }
         factory { GetAllDevicesInteractor(get()) }
         factory { IsKnownDeviceInteractor() }
-        factory { SaveScanBatchInteractor(get(), get(), get(), get()) }
         factory { GetBleRecordFramesFromRawInteractor() }
         factory { GetManufacturerInfoFromRawBleInteractor(get(), get()) }
-        factory { CheckProfileDetectionInteractor(get(), get(), get(), get(), get(), get()) }
         factory { BuildDeviceFromScanDataInteractor(get()) }
         factory { GetAirdropInfoFromBleFrame() }
-        single { FilterCheckerImpl(get(), get(), get(), get(), get()) }
         factory { CheckDeviceIsFollowingInteractor(get()) }
         factory { SaveReportInteractor(get()) }
         factory { BackupDatabaseInteractor(get(), get()) }
@@ -35,5 +32,7 @@ object InteractorsModule {
         factory { SaveFirstAppLaunchTimeInteractor(get()) }
         factory { CheckNeedToShowEnjoyTheAppInteractor(get(), get()) }
         factory { EnjoyTheAppAskLaterInteractor(get()) }
+        factory { CheckBatchForRadarMatchesInteractor(get(), get(), get(), get()) }
+        factory { SaveOrMergeBatchInteractor(get(), get(), get(), get(), get()) }
     }
 }
