@@ -24,6 +24,7 @@ import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
 import f.cking.software.mapParallel
 import f.cking.software.service.BgScanService
+import f.cking.software.splitToBatches
 import f.cking.software.ui.ScreenNavigationCommands
 import f.cking.software.ui.devicelist.DeviceListViewModel.ActiveScannerExpandedState.entries
 import f.cking.software.utils.navigation.Router
@@ -230,16 +231,22 @@ class DeviceListViewModel(
         appliedFilters: List<FilterHolder>,
         searchQuery: String?,
     ): List<DeviceData> {
-        val filter = withContext(Dispatchers.Main) {
-            when {
-                appliedFilters.isEmpty() -> null
-                appliedFilters.size == 1 -> appliedFilters.first().filter
-                else -> RadarProfile.Filter.All(appliedFilters.map { it.filter })
-            }
+        val filter = when {
+            appliedFilters.isEmpty() -> null
+            appliedFilters.size == 1 -> appliedFilters.first().filter
+            else -> RadarProfile.Filter.All(appliedFilters.map { it.filter })
         }
         val query = searchQuery
-        return this.mapParallel { it.takeIf { checkFilter(it, filter) && filterQuery(it, query) } }
-            .filterNotNull()
+
+        return if (filter == null && query == null) {
+            this
+        } else {
+            this.splitToBatches(100)
+                .mapParallel { batch ->
+                    batch.filter { checkFilter(it, filter) && filterQuery(it, query) }
+                }
+                .flatMap { it }
+        }
     }
 
     private suspend fun showEnjoyTheAppIfNeeded() {
