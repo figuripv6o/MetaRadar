@@ -151,6 +151,17 @@ fun <T> List<T>.splitToBatches(batchSize: Int): List<List<T>> {
     return result
 }
 
+fun <T> List<T>.splitToBatchesEqual(batchCount: Int): List<List<T>> {
+    val batches = Array(batchCount) { mutableListOf<T>() }
+
+    for (i in 0..lastIndex) {
+        val batchIndex = i % batchCount
+        batches[batchIndex].add(this[i])
+    }
+
+    return batches.toList()
+}
+
 fun Context.isDarkModeOn(): Boolean {
     val nightModeFlags = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
     return nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES

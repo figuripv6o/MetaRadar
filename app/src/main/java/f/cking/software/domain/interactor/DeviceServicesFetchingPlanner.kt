@@ -3,7 +3,7 @@ package f.cking.software.domain.interactor
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.SavedDeviceHandle
 import f.cking.software.mapParallel
-import f.cking.software.splitToBatches
+import f.cking.software.splitToBatchesEqual
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
-import kotlin.math.max
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -42,14 +41,15 @@ class DeviceServicesFetchingPlanner(
 
     private suspend fun fetchAllDevices(metadataNeeded: List<DeviceData>) {
         try {
-            val batchSize = max(MAX_BATCH_SIZE, metadataNeeded.size / MAX_BATCH_SIZE)
             withTimeout(TOTAL_FETCH_TIMEOUT_SEC.seconds) {
-                metadataNeeded.splitToBatches(batchSize).mapParallel { batch ->
-                    Timber.tag(TAG).i("Processing batch of ${batch.size} devices")
-                    batch.forEach { device ->
-                        fetchDevice(device)
+                metadataNeeded.splitToBatchesEqual(PARALLEL_BATCH_COUNT)
+                    .filter { it.isNotEmpty() }
+                    .mapParallel { batch ->
+                        Timber.tag(TAG).i("Processing batch of ${batch.size} devices")
+                        batch.forEach { device ->
+                            fetchDevice(device)
+                        }
                     }
-                }
             }
 
         } catch (e: TimeoutCancellationException) {
@@ -77,10 +77,10 @@ class DeviceServicesFetchingPlanner(
     }
 
     companion object {
-        private const val MAX_BATCH_SIZE = 5
+        private const val PARALLEL_BATCH_COUNT = 10
         private const val CHECK_INTERVAL_PER_DEVICE_MIN = 10
-        private const val DEVICE_FETCH_TIMEOUT_SEC = 8
-        private const val TOTAL_FETCH_TIMEOUT_SEC = 20
+        private const val DEVICE_FETCH_TIMEOUT_SEC = 5
+        private const val TOTAL_FETCH_TIMEOUT_SEC = 30
         private const val TAG = "DeviceServicesFetchingPlanner"
     }
 }
