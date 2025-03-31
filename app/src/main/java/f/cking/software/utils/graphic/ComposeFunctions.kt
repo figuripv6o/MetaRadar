@@ -331,7 +331,7 @@ fun DeviceListItem(
                         }
                     }
                 }
-                device.manufacturerInfo?.name?.let {
+                device.resolvedManufacturerName?.let {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(text = it)
                 }

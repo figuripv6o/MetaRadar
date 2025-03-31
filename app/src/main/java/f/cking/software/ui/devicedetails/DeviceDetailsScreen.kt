@@ -321,7 +321,7 @@ object DeviceDetailsScreen {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_manufacturer), fontWeight = FontWeight.Bold)
-                    Text(text = deviceData.manufacturerInfo?.name ?: stringResource(R.string.not_applicable))
+                    Text(text = deviceData.resolvedManufacturerName ?: stringResource(R.string.not_applicable))
                     Spacer(modifier = Modifier.height(8.dp))
 
                     DeviceMetadataView(deviceData, viewModel)

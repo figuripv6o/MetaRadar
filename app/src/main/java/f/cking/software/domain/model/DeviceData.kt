@@ -36,6 +36,10 @@ data class DeviceData(
         metadata?.buildDisplayName()?.takeIf { it.isNotBlank() } ?: name
     }
 
+    val resolvedManufacturerName by lazy {
+        metadata?.manufacturerName?.takeIf { it.isNotBlank() } ?: manufacturerInfo?.name
+    }
+
     fun knownLifetime(): Long {
         return lastDetectTimeMs - firstDetectTimeMs
     }
@@ -98,6 +102,7 @@ data class DeviceData(
             deviceClass = new.deviceClass,
             servicesUuids = new.servicesUuids,
             rowDataEncoded = new.rowDataEncoded,
+            isConnectable = new.isConnectable,
         )
     }
 }
