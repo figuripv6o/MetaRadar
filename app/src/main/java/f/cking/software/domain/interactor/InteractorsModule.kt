@@ -7,6 +7,7 @@ object InteractorsModule {
 
     val module = module {
         single { FilterCheckerImpl(get(), get(), get(), get(), get()) }
+        single { DeviceServicesFetchingPlanner(get()) }
 
         factory { ClearGarbageInteractor(get(), get(), get(), get()) }
         factory { GetAllDevicesInteractor(get()) }
@@ -33,6 +34,7 @@ object InteractorsModule {
         factory { CheckNeedToShowEnjoyTheAppInteractor(get(), get()) }
         factory { EnjoyTheAppAskLaterInteractor(get()) }
         factory { CheckBatchForRadarMatchesInteractor(get(), get(), get(), get()) }
-        factory { SaveOrMergeBatchInteractor(get(), get(), get(), get(), get()) }
+        factory { SaveOrMergeBatchInteractor(get(), get(), get(), get(), get(), get(), get()) }
+        factory { FetchDeviceServiceInfo(get(), get()) }
     }
 }

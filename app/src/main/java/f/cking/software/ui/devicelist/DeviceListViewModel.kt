@@ -19,6 +19,7 @@ import f.cking.software.data.repo.SettingsRepository
 import f.cking.software.domain.interactor.CheckNeedToShowEnjoyTheAppInteractor
 import f.cking.software.domain.interactor.EnjoyTheAppAskLaterInteractor
 import f.cking.software.domain.interactor.filterchecker.FilterCheckerImpl
+import f.cking.software.domain.model.DeviceClass
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.ManufacturerInfo
 import f.cking.software.domain.model.RadarProfile
@@ -303,13 +304,16 @@ class DeviceListViewModel(
 
     private fun filterQuery(device: DeviceData, query: String?): Boolean {
         return query?.takeIf { it.isNotBlank() }?.let { searchStr ->
-            (device.name?.contains(searchStr, true) ?: false)
-                    || (device.customName?.contains(searchStr, true) ?: false)
-                    || (device.manufacturerInfo?.name?.contains(searchStr, true) ?: false)
+            (device.resolvedName?.contains(searchStr, true) == true)
+                    || (device.metadata?.deviceName?.contains(searchStr, true) == true)
+                    || (device.metadata?.manufacturerName?.contains(searchStr, true) == true)
+                    || (device.metadata?.modelNumber?.contains(searchStr, true) == true)
+                    || (device.customName?.contains(searchStr, true) == true)
+                    || (device.manufacturerInfo?.name?.contains(searchStr, true) == true)
                     || device.address.contains(searchStr, true)
                     || device.address.checkRegexSafe(query)
-                    || (device.name?.checkRegexSafe(query) ?: false)
-        } ?: true
+                    || (device.resolvedName?.checkRegexSafe(query) == true)
+        } != false
     }
 
     private suspend fun checkFilter(device: DeviceData, filter: RadarProfile.Filter?): Boolean {
@@ -377,11 +381,13 @@ class DeviceListViewModel(
                 else -> GENERAL_COMPARATOR.compare(first, second)
             }
         }, R.string.sort_type_by_distance),
-        BY_TYPE(Comparator { second, first ->
+        BY_TYPE(Comparator { first, second ->
             val firstType = first.resolvedDeviceClass
             val secondType = second.resolvedDeviceClass
             when {
-                firstType != secondType -> secondType::class.getFullName().compareTo(firstType::class.getFullName())
+                firstType !is DeviceClass.Unknown && secondType is DeviceClass.Unknown -> -1
+                firstType is DeviceClass.Unknown && secondType !is DeviceClass.Unknown -> 1
+                firstType != secondType -> firstType::class.getFullName().compareTo(secondType::class.getFullName())
                 else -> GENERAL_COMPARATOR.compare(first, second)
             }
         }, R.string.sort_type_by_device_type)
@@ -412,7 +418,7 @@ class DeviceListViewModel(
                 first.favorite && !second.favorite -> 1
                 !first.favorite && second.favorite -> -1
 
-                first.name != second.name -> first.name?.compareTo(second.name ?: return@Comparator 1) ?: -1
+                first.resolvedName != second.resolvedName -> first.resolvedName?.compareTo(second.resolvedName ?: return@Comparator 1) ?: -1
 
                 first.rssi != second.rssi -> first.rssi?.compareTo(second.rssi ?: return@Comparator 1) ?: -1
 

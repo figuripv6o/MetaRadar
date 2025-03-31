@@ -23,4 +23,6 @@ data class DeviceEntity(
     @ColumnInfo(name = "is_paired") val isPaired: Boolean = false,
     @ColumnInfo(name = "service_uuids", defaultValue = "") val serviceUuids: List<String>,
     @ColumnInfo(name = "row_data_encoded") val rowDataEncoded: String? = null,
+    @ColumnInfo(name = "metadata") val metadata: String? = null,
+    @ColumnInfo(name = "is_connectable") val isConnectable: Boolean = false,
 )

@@ -1,6 +1,7 @@
 package f.cking.software.data.repo
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import f.cking.software.BuildConfig
 import f.cking.software.TheAppConfig
 import kotlinx.coroutines.flow.Flow
@@ -62,7 +63,7 @@ class SettingsRepository(
     }
 
     fun setHideBackgroundLocationWarning(value: Long) {
-        sharedPreferences.edit().putLong(KEY_HIDE_BACKGROUND_LOCATION_WARNING, value).apply()
+        sharedPreferences.edit { putLong(KEY_HIDE_BACKGROUND_LOCATION_WARNING, value) }
         hideBackgroundLocationWarning.tryEmit(value)
     }
 
@@ -79,11 +80,11 @@ class SettingsRepository(
     }
 
     fun setEnjoyTheAppStartingPoint(value: Long) {
-        sharedPreferences.edit().putLong(KEY_ENJOY_THE_APP_STARTING_POINT, value).apply()
+        sharedPreferences.edit { putLong(KEY_ENJOY_THE_APP_STARTING_POINT, value) }
     }
 
     fun setSilentMode(enabled: Boolean) {
-        sharedPreferences.edit().putBoolean(KEY_SILENT_NETWORK_MODE, enabled).apply()
+        sharedPreferences.edit { putBoolean(KEY_SILENT_NETWORK_MODE, enabled) }
         silentModeState.tryEmit(getSilentMode())
     }
 
@@ -100,7 +101,15 @@ class SettingsRepository(
     }
 
     fun setCurrentBatchSortingStrategyId(value: Int) {
-        sharedPreferences.edit().putInt(KEY_CURRENT_BATCH_SORTING_STRATEGY_ID, value).apply()
+        sharedPreferences.edit { putInt(KEY_CURRENT_BATCH_SORTING_STRATEGY_ID, value) }
+    }
+
+    fun setEnableDeepAnalysis(value: Boolean) {
+        sharedPreferences.edit { putBoolean(KEY_ENABLE_DEEP_ANALYSIS, value) }
+    }
+
+    fun getEnableDeepAnalysis(): Boolean {
+        return sharedPreferences.getBoolean(KEY_ENABLE_DEEP_ANALYSIS, false)
     }
 
     companion object {
@@ -114,6 +123,7 @@ class SettingsRepository(
         private const val KEY_SILENT_NETWORK_MODE = "silent_network_mode"
         private const val KEY_CURRENT_BATCH_SORTING_STRATEGY_ID = "key_current_batch_sorting_strategy_id"
         private const val KEY_HIDE_BACKGROUND_LOCATION_WARNING = "key_hide_background_location_warning"
+        private const val KEY_ENABLE_DEEP_ANALYSIS = "key_enable_deep_analysis"
 
         const val NO_APP_LAUNCH_TIME = -1L
         const val NO_ENJOY_THE_APP_STARTING_POINT = -1L

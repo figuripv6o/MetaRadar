@@ -276,6 +276,12 @@ object SettingsScreen {
                 subtitle = null,
                 onClick = { viewModel.setRunOnStartup() }
             )
+            Switcher(
+                value = viewModel.deepAnalysisEnabled,
+                title = stringResource(R.string.enable_deep_analysis),
+                subtitle = stringResource(R.string.enable_deep_analysis_description),
+                onClick = { viewModel.onEnableDeepAnalysisClick() }
+            )
         }
     }
 

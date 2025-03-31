@@ -36,6 +36,6 @@ class ClearGarbageInteractor(
     private fun isGarbage(device: DeviceData): Boolean {
         return !isKnownDeviceInteractor.execute(device)
                 && (System.currentTimeMillis() - device.lastDetectTimeMs) > settingsRepository.getGarbagingTime()
-                && device.name == null
+                && device.resolvedName == null
     }
 }

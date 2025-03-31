@@ -10,4 +10,5 @@ class BleScanDevice(
     val deviceClass: Int?,
     val isPaired: Boolean,
     val serviceUuids: List<String>,
+    val isConnectable: Boolean
 )
