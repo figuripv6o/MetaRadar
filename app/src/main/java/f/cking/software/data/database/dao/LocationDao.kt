@@ -11,14 +11,14 @@ import f.cking.software.data.database.entity.LocationEntity
 interface LocationDao {
 
     @Query("""
-SELECT location.time, location.lat, location.lng 
-FROM location
-INNER JOIN (
-    SELECT location_time FROM device_to_location 
-    WHERE device_address = :address 
-      AND location_time BETWEEN :fromTime AND :toTime
-) AS dtl 
-ON dtl.location_time = location.time;
+        SELECT location.time, location.lat, location.lng 
+        FROM location
+        INNER JOIN (
+            SELECT location_time FROM device_to_location 
+            WHERE device_address = :address 
+              AND location_time BETWEEN :fromTime AND :toTime
+        ) AS dtl 
+        ON dtl.location_time = location.time;
     """)
     fun getAllLocationsByDeviceAddress(address: String, fromTime: Long = 0, toTime: Long = Long.MAX_VALUE): List<LocationEntity>
 

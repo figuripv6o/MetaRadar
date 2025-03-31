@@ -104,6 +104,7 @@ class ProfileDetailsViewModel(
                 description = description,
                 isActive = isActive,
                 detectFilter = filter?.let(FilterUiMapper::mapToDomain),
+                cooldownMs = null,
             )
         } catch (e: Throwable) {
             null
@@ -117,6 +118,7 @@ class ProfileDetailsViewModel(
             description = "",
             isActive = true,
             detectFilter = null,
+            cooldownMs = null,
         )
     }
 }

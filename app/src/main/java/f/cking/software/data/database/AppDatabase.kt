@@ -20,6 +20,7 @@ import f.cking.software.data.database.entity.DeviceEntity
 import f.cking.software.data.database.entity.DeviceToLocationEntity
 import f.cking.software.data.database.entity.JournalEntryEntity
 import f.cking.software.data.database.entity.LocationEntity
+import f.cking.software.data.database.entity.ProfileDetectEntity
 import f.cking.software.data.database.entity.RadarProfileEntity
 import f.cking.software.data.database.entity.TagEntity
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +38,7 @@ import java.io.File
         DeviceToLocationEntity::class,
         JournalEntryEntity::class,
         TagEntity::class,
+        ProfileDetectEntity::class,
     ],
     autoMigrations = [
         AutoMigration(from = 7, to = 8),
@@ -45,7 +47,7 @@ import java.io.File
         AutoMigration(from = 11, to = 12),
     ],
     exportSchema = true,
-    version = 18,
+    version = 19,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -127,6 +129,7 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_15_16,
                     MIGRATION_16_17,
                     MIGRATION_17_18,
+                    MIGRATION_18_19,
                 )
                 .build()
             Timber.d("Database is ready!")
@@ -215,6 +218,24 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_17_18 = migration(17, 18) {
             it.execSQL("ALTER TABLE device ADD COLUMN is_connectable INTEGER NOT NULL DEFAULT 0;")
+        }
+
+        val MIGRATION_18_19 = migration(18, 19) {
+            it.execSQL("ALTER TABLE radar_profile ADD COLUMN cooldown_ms INTEGER DEFAULT NULL;")
+            it.execSQL(
+                """
+                    CREATE TABLE IF NOT EXISTS profile_detect (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        profile_id INTEGER NOT NULL,
+                        trigger_time INTEGER NOT NULL,
+                        device_address TEXT NOT NULL
+                    )
+                """.trimIndent()
+            )
+            it.execSQL("""
+                CREATE INDEX IF NOT EXISTS index_profile_detect_profile_id_trigger_time 
+                ON profile_detect(profile_id, trigger_time)
+            """.trimIndent())
         }
 
         private fun migration(

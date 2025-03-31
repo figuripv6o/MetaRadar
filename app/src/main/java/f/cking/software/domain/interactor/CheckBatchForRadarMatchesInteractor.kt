@@ -1,10 +1,12 @@
 package f.cking.software.domain.interactor
 
 import f.cking.software.data.helpers.LocationProvider
+import f.cking.software.data.repo.LocationRepository
 import f.cking.software.data.repo.RadarProfilesRepository
 import f.cking.software.domain.interactor.filterchecker.FilterCheckerImpl
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.JournalEntry
+import f.cking.software.domain.model.ProfileDetect
 import f.cking.software.domain.model.RadarProfile
 import f.cking.software.domain.model.SavedDeviceHandle
 import f.cking.software.domain.toDomain
@@ -18,6 +20,7 @@ class CheckBatchForRadarMatchesInteractor(
     private val filterChecker: FilterCheckerImpl,
     private val saveReportInteractor: SaveReportInteractor,
     private val locationProvider: LocationProvider,
+    private val locationRepository: LocationRepository,
 ) {
 
     suspend fun execute(batch: List<SavedDeviceHandle>): List<ProfileResult> {
@@ -59,7 +62,7 @@ class CheckBatchForRadarMatchesInteractor(
     }
 
     private suspend fun checkProfile(profile: RadarProfile, devices: List<DeviceData>): ProfileResult? {
-        return profile.takeIf { it.isActive }
+        return profile.takeIf { it.isActive && isCooledDown(it) }
             ?.let {
                 devices.mapParallel { device ->
                     device.takeIf { profile.detectFilter?.let { filterChecker.check(device, it) } == true }
@@ -69,16 +72,49 @@ class CheckBatchForRadarMatchesInteractor(
             ?.let { matched -> ProfileResult(profile, matched) }
     }
 
+    private suspend fun isCooledDown(profile: RadarProfile): Boolean {
+        val cooldown = profile.cooldownMs
+        if (cooldown == null || cooldown <= 0L) {
+            return true
+        }
+
+        val lastDetect = radarProfilesRepository.getLatestProfileDetect(profile.id ?: return true)
+        if (lastDetect == null) {
+            return true
+        }
+
+        return System.currentTimeMillis() - lastDetect.triggerTime > cooldown
+    }
+
     private suspend fun saveReport(result: ProfileResult) {
         val locationModel = locationProvider.getFreshLocation()
+        val detectTime = System.currentTimeMillis()
 
-        val report = JournalEntry.Report.ProfileReport(
+        val deviceDetects = result.matched.mapNotNull {
+            val profileId = result.profile.id
+            if (profileId != null) {
+                ProfileDetect(
+                    id = null,
+                    profileId = profileId,
+                    triggerTime = detectTime,
+                    deviceAddress = it.address,
+                )
+            } else {
+                null
+            }
+        }
+        radarProfilesRepository.saveProfileDetects(deviceDetects)
+
+        if (locationModel != null) {
+            locationRepository.saveLocation(locationModel.toDomain(detectTime))
+        }
+
+        val journalReport = JournalEntry.Report.ProfileReport(
             profileId = result.profile.id ?: return,
             deviceAddresses = result.matched.map { it.address },
             locationModel = locationModel?.toDomain(System.currentTimeMillis()),
         )
-
-        saveReportInteractor.execute(report)
+        saveReportInteractor.execute(journalReport)
     }
 
     data class ProfileResult(
