@@ -12,7 +12,10 @@ import f.cking.software.domain.model.DeviceMetadata.ServiceTypes
 import f.cking.software.fromBase64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -26,35 +29,53 @@ class FetchDeviceServiceInfo(
 
     suspend fun execute(device: DeviceData): DeviceMetadata? {
         return withContext(Dispatchers.IO) {
+            val start = System.currentTimeMillis()
             Timber.tag(TAG).i("Fetching device info for ${device.address}")
             val originalMetadata = device.metadata
             val updatedMetadata = connectAndFetchServices(device).firstOrNull()
             if (originalMetadata != updatedMetadata) {
                 devicesRepository.saveDevice(device.copy(metadata = updatedMetadata))
             }
-            Timber.tag(TAG).i("Finished fetching device info for ${device.address}, metadata: $updatedMetadata")
+            val duration = System.currentTimeMillis() - start
+            Timber.tag(TAG).i("Fetching is finished after $duration ms for ${device.address}, metadata: $updatedMetadata")
             updatedMetadata
         }
     }
 
     @OptIn(FlowPreview::class)
     private suspend fun connectAndFetchServices(device: DeviceData): Flow<DeviceMetadata> = coroutineScope {
-        val connectionStream = bleScannerHelper.connectToDevice(device.address)
-        val pendingCharacteristics = mutableMapOf<String, BluetoothGattCharacteristic>()
-
-        var metadata = device.metadata ?: DeviceMetadata()
 
         flow<DeviceMetadata> {
-            val gatt: BluetoothGatt? = null
+            val pendingCharacteristics = mutableMapOf<String, BluetoothGattCharacteristic>()
+            var metadata = device.metadata ?: DeviceMetadata()
+            var gatt: BluetoothGatt? = null
+            var job: Job? = null
+
             Timber.tag(TAG).i("Connecting to ${device.address}")
+
             suspend fun submitMetadata() {
+                Timber.tag(TAG).i("Closing connection ${device.address}")
                 gatt?.let(bleScannerHelper::close)
+                job?.cancel()
                 emit(metadata)
             }
-            connectionStream.collect { event ->
+
+            fun disconnect() {
+                Timber.tag(TAG).i("Disconnecting from ${device.address}")
+                gatt?.let(bleScannerHelper::disconnect)
+
+                job = this@coroutineScope.async {
+                    delay(100)
+                    Timber.tag(TAG).i("Disconnecting from ${device.address} takes too long, closing connection")
+                    submitMetadata()
+                }
+            }
+
+            bleScannerHelper.connectToDevice(device.address).collect { event ->
                 when (event) {
                     is BleScannerHelper.DeviceConnectResult.Connected -> {
                         Timber.tag(TAG).i("Connected to ${device.address}. Discovering services...")
+                        gatt = event.gatt
                         bleScannerHelper.discoverServices(event.gatt)
                     }
                     is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
@@ -66,11 +87,11 @@ class FetchDeviceServiceInfo(
                                 requestCharacteristic(event.gatt, relevantCharacteristics.first())
                             } else {
                                 Timber.tag(TAG).i("No relevant characteristics found for ${device.address}")
-                                submitMetadata()
+                                disconnect()
                             }
                         } else {
                             Timber.tag(TAG).i("No services to request for ${device.address}")
-                            submitMetadata()
+                            disconnect()
                         }
                     }
                     is BleScannerHelper.DeviceConnectResult.CharacteristicRead -> {
@@ -101,7 +122,7 @@ class FetchDeviceServiceInfo(
 
                         if (pendingCharacteristics.isEmpty()) {
                             Timber.tag(TAG).i("All characteristics read for ${device.address}, finishing fetching...")
-                            submitMetadata()
+                            disconnect()
                         } else {
                             Timber.tag(TAG).i("Still pending characteristics for ${device.address}: ${pendingCharacteristics.keys}")
                             requestCharacteristic(event.gatt, pendingCharacteristics.values.first())
@@ -114,7 +135,7 @@ class FetchDeviceServiceInfo(
 
                         if (pendingCharacteristics.isEmpty()) {
                             Timber.tag(TAG).i("All characteristics read for ${device.address}, finishing fetching...")
-                            submitMetadata()
+                            disconnect()
                         } else {
                             Timber.tag(TAG).i("Still pending characteristics for ${device.address}: $pendingCharacteristics.keys")
                             requestCharacteristic(event.gatt, pendingCharacteristics.values.first())

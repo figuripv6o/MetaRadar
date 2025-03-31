@@ -143,9 +143,9 @@ fun <T> List<T>.splitToBatches(batchSize: Int): List<List<T>> {
     do {
         val rangeEnd = fromIndex + (batchSize - 1)
         val toIndex = if (rangeEnd <= lastIndex) rangeEnd else lastIndex
-        result.add(this.subList(fromIndex, toIndex))
+        result.add(this.subList(fromIndex, toIndex + 1))
         fromIndex = toIndex + 1
-    } while (fromIndex < lastIndex)
+    } while (fromIndex <= lastIndex)
 
     return result
 }

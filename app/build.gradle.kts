@@ -195,6 +195,9 @@ dependencies {
 
     // tests
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.ktx.testing)
+    testImplementation(libs.ktx.testing.core)
     androidTestImplementation(libs.ktx.testing)
 }
 
