@@ -36,13 +36,8 @@ class DeviceServicesFetchingPlanner(
 
                 Timber.tag(TAG).i("Scheduling fetch service info for ${metadataNeeded.size} devices, out of ${devices.size} total")
 
-                try {
-                    fetchAllDevices(metadataNeeded)
-                    Timber.tag(TAG).i("All devices processed")
-                } catch (e: FetchDeviceServiceInfo.MaxConnectionsReached) {
-                    Timber.e("Max connections exceeded")
-                    bleScannerHelper.closeAllConnections()
-                }
+                fetchAllDevices(metadataNeeded)
+                Timber.tag(TAG).i("All devices processed")
             }
         }
     }
@@ -75,6 +70,9 @@ class DeviceServicesFetchingPlanner(
         } catch (e: TimeoutCancellationException) {
             Timber.tag(TAG).e(e, "Timeout fetching device info for ${device.address}")
             bleScannerHelper.closeDeviceConnection(device.address)
+        } catch (e: FetchDeviceServiceInfo.MaxConnectionsReached) {
+            Timber.tag(TAG).e(e, "Max connections reached")
+            bleScannerHelper.closeAllConnections()
         }
     }
 
