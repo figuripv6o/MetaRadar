@@ -32,7 +32,7 @@ data class DeviceData(
     }
 
     val resolvedName: String? by lazy {
-        metadata?.buildDisplayName() ?: name
+        metadata?.buildDisplayName()?.takeIf { it.isNotBlank() } ?: name
     }
 
     fun knownLifetime(): Long {
@@ -42,7 +42,7 @@ data class DeviceData(
     fun buildDisplayName(): String {
         return customName?.takeIf { it.isNotBlank() }
             ?: name
-            ?: metadata?.buildDisplayName()
+            ?: metadata?.buildDisplayName()?.takeIf { it.isNotBlank() }
             ?: address
     }
 
