@@ -304,13 +304,16 @@ class DeviceListViewModel(
 
     private fun filterQuery(device: DeviceData, query: String?): Boolean {
         return query?.takeIf { it.isNotBlank() }?.let { searchStr ->
-            (device.resolvedName?.contains(searchStr, true) ?: false)
-                    || (device.customName?.contains(searchStr, true) ?: false)
-                    || (device.manufacturerInfo?.name?.contains(searchStr, true) ?: false)
+            (device.resolvedName?.contains(searchStr, true) == true)
+                    || (device.metadata?.deviceName?.contains(searchStr, true) == true)
+                    || (device.metadata?.manufacturerName?.contains(searchStr, true) == true)
+                    || (device.metadata?.modelNumber?.contains(searchStr, true) == true)
+                    || (device.customName?.contains(searchStr, true) == true)
+                    || (device.manufacturerInfo?.name?.contains(searchStr, true) == true)
                     || device.address.contains(searchStr, true)
                     || device.address.checkRegexSafe(query)
-                    || (device.resolvedName?.checkRegexSafe(query) ?: false)
-        } ?: true
+                    || (device.resolvedName?.checkRegexSafe(query) == true)
+        } != false
     }
 
     private suspend fun checkFilter(device: DeviceData, filter: RadarProfile.Filter?): Boolean {
