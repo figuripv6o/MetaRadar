@@ -11,6 +11,7 @@ data class RadarProfile(
     val description: String?,
     val isActive: Boolean = true,
     val detectFilter: Filter?,
+    val cooldownMs: Long?,
 ) {
 
     @Serializable

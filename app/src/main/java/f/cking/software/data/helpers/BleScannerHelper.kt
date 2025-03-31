@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class BleScannerHelper(
     private val bleFiltersProvider: BleFiltersProvider,
@@ -41,6 +42,7 @@ class BleScannerHelper(
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val batch = hashMapOf<String, BleScanDevice>()
     private var currentScanTimeMs: Long = System.currentTimeMillis()
+    private val connections: MutableMap<String, BluetoothGatt> = ConcurrentHashMap()
 
     var inProgress = MutableStateFlow(false)
 
@@ -95,6 +97,8 @@ class BleScannerHelper(
             val callback = object : BluetoothGattCallback() {
                 override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
                     super.onServicesDiscovered(gatt, status)
+                    connections.put(gatt.device.address, gatt)
+
                     if (status == BluetoothGatt.GATT_SUCCESS) {
                         Timber.tag(TAG_CONNECT).d("Services discovered. ${gatt.services.size} services for device $address")
                         services.addAll(gatt.services.orEmpty())
@@ -146,7 +150,12 @@ class BleScannerHelper(
                         }
                         BluetoothProfile.STATE_DISCONNECTED -> {
                             Timber.tag(TAG_CONNECT).d("Disconnected from device $address")
-                            trySend(DeviceConnectResult.Disconnected)
+                            if (status == 0x85) {
+                                Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
+                                trySend(DeviceConnectResult.MaxGattConnectionsReached)
+                            } else {
+                                trySend(DeviceConnectResult.Disconnected)
+                            }
                         }
                         else -> {
                             Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
@@ -158,11 +167,11 @@ class BleScannerHelper(
             }
 
             Timber.tag(TAG_CONNECT).d("Connecting to device $address")
-            val gatt = device.connectGatt(appContext, false, callback)
+            connections[address] = device.connectGatt(appContext, false, callback)
 
             awaitClose {
                 Timber.tag(TAG_CONNECT).d("Closing connection to device $address")
-                gatt.close()
+                closeDeviceConnection(address)
             }
         }
     }
@@ -183,6 +192,16 @@ class BleScannerHelper(
     fun close(gatt: BluetoothGatt) {
         Timber.tag(TAG_CONNECT).d("Closing connection to device ${gatt.device.address}")
         gatt.close()
+    }
+
+    fun closeDeviceConnection(address: String) {
+        connections[address]?.let(::close)
+        connections.remove(address)
+    }
+
+    fun closeAllConnections() {
+        connections.values.forEach(::close)
+        connections.clear()
     }
 
     @SuppressLint("MissingPermission")
@@ -211,6 +230,7 @@ class BleScannerHelper(
         data object Disconnecting : DeviceConnectResult
         data object Disconnected : DeviceConnectResult
         data class DisconnectedWithError(val errorCode: Int) : DeviceConnectResult
+        data object MaxGattConnectionsReached : DeviceConnectResult
     }
 
     fun isBluetoothEnabled(): Boolean {
@@ -265,6 +285,7 @@ class BleScannerHelper(
 
         if (bluetoothAdapter?.state == BluetoothAdapter.STATE_ON) {
             bluetoothScanner?.stopScan(callback)
+            requireAdapter().cancelDiscovery()
         }
 
         when (scanResult) {

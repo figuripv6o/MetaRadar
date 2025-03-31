@@ -1,6 +1,7 @@
 package f.cking.software.utils
 
 import f.cking.software.splitToBatches
+import f.cking.software.splitToBatchesEqual
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
 
@@ -82,9 +83,59 @@ class SplitToBatchesTest {
         )
     }
 
+    @Test
+    fun `split to equal batches`() {
+        testSplitToBatchesEq(
+            listSize = 0,
+            batchCount = 1,
+            expected = listOf(emptyList())
+        )
+        testSplitToBatchesEq(
+            listSize = 1,
+            batchCount = 2,
+            expected = listOf(listOf(0), emptyList())
+        )
+        testSplitToBatchesEq(
+            listSize = 2,
+            batchCount = 2,
+            expected = listOf(listOf(0), listOf(1))
+        )
+        testSplitToBatchesEq(
+            listSize = 3,
+            batchCount = 2,
+            expected = listOf(listOf(0, 2), listOf(1))
+        )
+        testSplitToBatchesEq(
+            listSize = 4,
+            batchCount = 2,
+            expected = listOf(listOf(0, 2), listOf(1, 3))
+        )
+        testSplitToBatchesEq(
+            listSize = 5,
+            batchCount = 3,
+            expected = listOf(listOf(0, 3), listOf(1, 4), listOf(2))
+        )
+        testSplitToBatchesEq(
+            listSize = 6,
+            batchCount = 3,
+            expected = listOf(listOf(0, 3), listOf(1, 4), listOf(2, 5))
+        )
+        testSplitToBatchesEq(
+            listSize = 8,
+            batchCount = 3,
+            expected = listOf(listOf(0, 3, 6), listOf(1, 4, 7), listOf(2, 5))
+        )
+    }
+
     private fun testSplitToBatches(listSize: Int, batchSize: Int, expected: List<List<Int>>) {
         val list: List<Int> = (0 until listSize).toList()
         val actual = list.splitToBatches(batchSize)
+        assertEquals(expected, actual)
+    }
+
+    private fun testSplitToBatchesEq(listSize: Int, batchCount: Int, expected: List<List<Int>>) {
+        val list: List<Int> = (0 until listSize).toList()
+        val actual = list.splitToBatchesEqual(batchCount)
         assertEquals(expected, actual)
     }
 }

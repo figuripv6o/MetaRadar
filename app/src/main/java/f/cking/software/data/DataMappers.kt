@@ -5,12 +5,14 @@ import f.cking.software.data.database.entity.AppleContactEntity
 import f.cking.software.data.database.entity.DeviceEntity
 import f.cking.software.data.database.entity.JournalEntryEntity
 import f.cking.software.data.database.entity.LocationEntity
+import f.cking.software.data.database.entity.ProfileDetectEntity
 import f.cking.software.data.database.entity.RadarProfileEntity
 import f.cking.software.domain.model.AppleAirDrop
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.JournalEntry
 import f.cking.software.domain.model.LocationModel
 import f.cking.software.domain.model.ManufacturerInfo
+import f.cking.software.domain.model.ProfileDetect
 import f.cking.software.domain.model.RadarProfile
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -91,7 +93,8 @@ fun RadarProfile.toData(): RadarProfileEntity {
         name = name,
         description = description,
         isActive = isActive,
-        detectFilter = json.encodeToString(detectFilter)
+        detectFilter = json.encodeToString(detectFilter),
+        cooldown = cooldownMs,
     )
 }
 
@@ -101,7 +104,26 @@ fun RadarProfileEntity.toDomain(): RadarProfile {
         name = name,
         description = description,
         isActive = isActive,
-        detectFilter = detectFilter?.let { json.decodeFromStringOrNull(detectFilter) }
+        detectFilter = detectFilter?.let { json.decodeFromStringOrNull(detectFilter) },
+        cooldownMs = cooldown,
+    )
+}
+
+fun ProfileDetectEntity.toDomain(): ProfileDetect {
+    return ProfileDetect(
+        id = id,
+        profileId = profileId,
+        triggerTime = triggerTime,
+        deviceAddress = deviceAddress
+    )
+}
+
+fun ProfileDetect.toData(): ProfileDetectEntity {
+    return ProfileDetectEntity(
+        id = id,
+        profileId = profileId,
+        triggerTime = triggerTime,
+        deviceAddress = deviceAddress
     )
 }
 

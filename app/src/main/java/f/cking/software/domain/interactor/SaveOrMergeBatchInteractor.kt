@@ -26,7 +26,6 @@ class SaveOrMergeBatchInteractor(
         return withContext(Dispatchers.Default) {
             val discoveredDevices = batch.map { buildDeviceFromScanDataInteractor.execute(it) }
             val existingDevices = devicesRepository.getAllByAddresses(discoveredDevices.map { it.address }).associateBy { it.address }
-            val knownDevicesCount = existingDevices.values.count(isKnownDeviceInteractor::execute)
             val airdropContactToPreviouslySeenAtTime = mutableMapOf<Int, Long>()
 
             val mergedDevices = discoveredDevices.map { newDiscovered ->
@@ -61,6 +60,7 @@ class SaveOrMergeBatchInteractor(
                 locationRepository.saveLocation(location.toDomain(detectTime), batch.map { it.address })
             }
 
+            val knownDevicesCount = mergedDevices.count(isKnownDeviceInteractor::execute)
             Result(
                 knownDevicesCount = knownDevicesCount,
                 savedBatch = savedBatch
