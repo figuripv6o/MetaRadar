@@ -11,6 +11,7 @@
     <string name="select">Select</string>
     <string name="clear">Clear</string>
     <string name="fetch">Fetch</string>
+    <string name="analyse">Analyse</string>
     <string name="decline">Decline</string>
     <string name="ok">OK</string>
     <string name="turn_on">Turn on</string>
@@ -94,6 +95,8 @@
     <string name="database_block_title">Database actions</string>
     <string name="app_settings_title">App settings</string>
     <string name="silent_mode_is_off_toast">Offline mode is turned off. You can change it in the settings.</string>
+    <string name="enable_deep_analysis">Deep analysis</string>
+    <string name="enable_deep_analysis_description">Enabling deep analysis for all found devices will provide more data for each scan, but increase scan time and power consumption.</string>
 
     <!-- Select manufacturer -->
     <string name="select_manufacturer">Search manufacturer</string>

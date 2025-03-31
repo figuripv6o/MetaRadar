@@ -79,7 +79,7 @@ class DeviceServicesFetchingPlanner(
     companion object {
         private const val MAX_BATCH_SIZE = 5
         private const val CHECK_INTERVAL_PER_DEVICE_MIN = 10
-        private const val DEVICE_FETCH_TIMEOUT_SEC = 5
+        private const val DEVICE_FETCH_TIMEOUT_SEC = 8
         private const val TOTAL_FETCH_TIMEOUT_SEC = 20
         private const val TAG = "DeviceServicesFetchingPlanner"
     }

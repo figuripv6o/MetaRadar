@@ -225,7 +225,7 @@ object DeviceDetailsScreen {
                 viewModel = viewModel,
                 isMoving = isMoving,
             )
-            OnlineStatus(viewModel = viewModel)
+            OnlineStatus(viewModel = viewModel, deviceData.isConnectable)
             Spacer(modifier = Modifier.height(16.dp))
             Tags(deviceData = deviceData, viewModel = viewModel)
             Spacer(modifier = Modifier.height(16.dp))
@@ -238,6 +238,7 @@ object DeviceDetailsScreen {
     @Composable
     private fun OnlineStatus(
         viewModel: DeviceDetailsViewModel,
+        isConnectable: Boolean,
     ) {
         viewModel.onlineStatusData?.let { onlineStatus ->
             Spacer(modifier = Modifier.height(16.dp))
@@ -254,21 +255,23 @@ object DeviceDetailsScreen {
                         Text(text = stringResource(viewModel.connectionStatus.statusRes))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    when (val status = viewModel.connectionStatus) {
-                        is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTED -> {
-                            Button(onClick = { viewModel.establishConnection() }) {
-                                Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
+                    if (isConnectable) {
+                        when (val status = viewModel.connectionStatus) {
+                            is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTED -> {
+                                Button(onClick = { viewModel.establishConnection() }) {
+                                    Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
+                                }
                             }
-                        }
 
-                        is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
-                            Button(onClick = { viewModel.disconnect(status.gatt) }) {
-                                Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
+                            is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
+                                Button(onClick = { viewModel.disconnect(status.gatt) }) {
+                                    Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
+                                }
                             }
-                        }
 
-                        is DeviceDetailsViewModel.ConnectionStatus.CONNECTING, is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
-                            CircularProgressIndicator()
+                            is DeviceDetailsViewModel.ConnectionStatus.CONNECTING, is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
+                                CircularProgressIndicator()
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.weight(1f))
@@ -365,7 +368,7 @@ object DeviceDetailsScreen {
                     Spacer(Modifier.width(8.dp))
                     if (viewModel.matadataIsFetching) {
                         CircularProgressIndicator()
-                    } else {
+                    } else if (device.isConnectable) {
                         TagChip(stringResource(R.string.fetch)) { viewModel.fetchDeviceServiceInfo(device) }
                     }
                 }

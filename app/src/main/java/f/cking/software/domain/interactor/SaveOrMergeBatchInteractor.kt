@@ -3,6 +3,7 @@ package f.cking.software.domain.interactor
 import f.cking.software.data.helpers.LocationProvider
 import f.cking.software.data.repo.DevicesRepository
 import f.cking.software.data.repo.LocationRepository
+import f.cking.software.data.repo.SettingsRepository
 import f.cking.software.domain.model.AppleAirDrop
 import f.cking.software.domain.model.BleScanDevice
 import f.cking.software.domain.model.ManufacturerInfo
@@ -18,6 +19,7 @@ class SaveOrMergeBatchInteractor(
     private val locationProvider: LocationProvider,
     private val isKnownDeviceInteractor: IsKnownDeviceInteractor,
     private val deviceServicesFetchingPlanner: DeviceServicesFetchingPlanner,
+    private val settingsRepository: SettingsRepository,
 ) {
 
     suspend fun execute(batch: List<BleScanDevice>): Result {
@@ -48,7 +50,9 @@ class SaveOrMergeBatchInteractor(
                 )
             }
 
-            deviceServicesFetchingPlanner.scheduleFetchServiceInfo(savedBatch)
+            if (settingsRepository.getEnableDeepAnalysis()) {
+                deviceServicesFetchingPlanner.scheduleFetchServiceInfo(savedBatch)
+            }
 
             val location = locationProvider.getFreshLocation()
 
