@@ -25,6 +25,7 @@ data class DeviceData(
     val servicesUuids: List<String>,
     val rowDataEncoded: String?,
     val metadata: DeviceMetadata?,
+    val isConnectable: Boolean,
 ) {
 
     val resolvedDeviceClass: DeviceClass by lazy {

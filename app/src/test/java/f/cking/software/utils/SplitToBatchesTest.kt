@@ -30,6 +30,15 @@ class SplitToBatchesTest {
     }
 
     @Test
+    fun `test batch size is grater than list`() {
+        testSplitToBatches(
+            listSize = 5,
+            batchSize = 10,
+            expected = listOf(listOf(0, 1, 2, 3, 4))
+        )
+    }
+
+    @Test
     fun `test general scenarios`() {
         testSplitToBatches(
             listSize = 2,

@@ -182,5 +182,6 @@ object BuildDeviceClassFromSystemInfo {
         "TV " to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
         "MacBook" to DeviceClass.Computer.Laptop,
         "Mac" to DeviceClass.Computer.Desktop,
+        "iPad" to DeviceClass.Phone.Smartphone,
     )
 }

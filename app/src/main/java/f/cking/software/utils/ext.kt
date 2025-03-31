@@ -14,6 +14,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -115,7 +116,7 @@ object SHA256 {
 }
 
 fun Context.openUrl(url: String) {
-    val webpage: Uri = Uri.parse(url)
+    val webpage: Uri = url.toUri()
     val intent = Intent(Intent.ACTION_VIEW, webpage)
     try {
         startActivity(intent)

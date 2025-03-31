@@ -45,7 +45,7 @@ import java.io.File
         AutoMigration(from = 11, to = 12),
     ],
     exportSchema = true,
-    version = 17,
+    version = 18,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -126,6 +126,7 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_14_15,
                     MIGRATION_15_16,
                     MIGRATION_16_17,
+                    MIGRATION_17_18,
                 )
                 .build()
             Timber.d("Database is ready!")
@@ -210,6 +211,10 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_16_17 = migration(16, 17) {
             it.execSQL("ALTER TABLE device ADD COLUMN metadata TEXT DEFAULT NULL;")
+        }
+
+        val MIGRATION_17_18 = migration(17, 18) {
+            it.execSQL("ALTER TABLE device ADD COLUMN is_connectable INTEGER NOT NULL DEFAULT 0;")
         }
 
         private fun migration(

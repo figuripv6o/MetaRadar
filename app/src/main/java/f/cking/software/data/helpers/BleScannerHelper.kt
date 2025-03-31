@@ -72,7 +72,8 @@ class BleScannerHelper(
                 addressType = addressType,
                 deviceClass = result.device.bluetoothClass.deviceClass,
                 isPaired = isPaired,
-                serviceUuids = result.scanRecord?.serviceUuids?.map { it.uuid.toString() }.orEmpty()
+                serviceUuids = result.scanRecord?.serviceUuids?.map { it.uuid.toString() }.orEmpty(),
+                isConnectable = result.isConnectable,
             )
 
             batch.put(device.address, device)

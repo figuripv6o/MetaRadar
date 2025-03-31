@@ -31,6 +31,7 @@ class BuildDeviceFromScanDataInteractor(
             servicesUuids = scanData.serviceUuids,
             rowDataEncoded = rawData?.toBase64(),
             metadata = null,
+            isConnectable = scanData.isConnectable,
         )
     }
 }
