@@ -369,7 +369,7 @@ object DeviceDetailsScreen {
                     if (viewModel.matadataIsFetching) {
                         CircularProgressIndicator()
                     } else if (device.isConnectable) {
-                        TagChip(stringResource(R.string.fetch)) { viewModel.fetchDeviceServiceInfo(device) }
+                        TagChip(stringResource(R.string.analyse)) { viewModel.fetchDeviceServiceInfo(device) }
                     }
                 }
             },
