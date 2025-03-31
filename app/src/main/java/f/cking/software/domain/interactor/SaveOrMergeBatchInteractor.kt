@@ -17,9 +17,10 @@ class SaveOrMergeBatchInteractor(
     private val buildDeviceFromScanDataInteractor: BuildDeviceFromScanDataInteractor,
     private val locationProvider: LocationProvider,
     private val isKnownDeviceInteractor: IsKnownDeviceInteractor,
+    private val deviceServicesFetchingPlanner: DeviceServicesFetchingPlanner,
 ) {
 
-    suspend fun execute(batch: List<BleScanDevice>) : Result {
+    suspend fun execute(batch: List<BleScanDevice>): Result {
         return withContext(Dispatchers.Default) {
             val discoveredDevices = batch.map { buildDeviceFromScanDataInteractor.execute(it) }
             val existingDevices = devicesRepository.getAllByAddresses(discoveredDevices.map { it.address }).associateBy { it.address }
@@ -37,6 +38,18 @@ class SaveOrMergeBatchInteractor(
 
             devicesRepository.saveScanBatch(mergedDevices)
 
+            val savedBatch = mergedDevices.map { mergedDevice ->
+                SavedDeviceHandle(
+                    previouslySeenAtTime = existingDevices[mergedDevice.address]?.lastDetectTimeMs ?: mergedDevice.lastDetectTimeMs,
+                    device = mergedDevice,
+                    airdrop = airdropContactToPreviouslySeenAtTime
+                        .takeIf { it.isNotEmpty() }
+                        ?.let { SavedDeviceHandle.AirdropHandle(it) }
+                )
+            }
+
+            deviceServicesFetchingPlanner.scheduleFetchServiceInfo(savedBatch)
+
             val location = locationProvider.getFreshLocation()
 
             val detectTime = batch.firstOrNull()?.scanTimeMs
@@ -46,15 +59,7 @@ class SaveOrMergeBatchInteractor(
 
             Result(
                 knownDevicesCount = knownDevicesCount,
-                savedBatch = mergedDevices.map { mergedDevice ->
-                    SavedDeviceHandle(
-                        previouslySeenAtTime = existingDevices[mergedDevice.address]?.lastDetectTimeMs ?: mergedDevice.lastDetectTimeMs,
-                        device = mergedDevice,
-                        airdrop = airdropContactToPreviouslySeenAtTime
-                            .takeIf { it.isNotEmpty() }
-                            ?.let { SavedDeviceHandle.AirdropHandle(it) }
-                    )
-                }
+                savedBatch = savedBatch
             )
         }
     }
@@ -80,14 +85,14 @@ class SaveOrMergeBatchInteractor(
     private data class AirdropContactsMergeResult(
         val updatedManufacturerInfo: ManufacturerInfo?,
         val airdropContactToPreviouslySeenAtTime: Map<Int, Long>,
-    ) {
-        companion object {
-            val EMPTY = AirdropContactsMergeResult(null, emptyMap())
-        }
-    }
+    )
 
     data class Result(
         val knownDevicesCount: Int,
         val savedBatch: List<SavedDeviceHandle>,
     )
+
+    companion object {
+        private const val TAG = "SaveOrMergeBatchInteractor"
+    }
 }

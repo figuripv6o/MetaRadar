@@ -24,8 +24,8 @@ class FetchDeviceServiceInfo(
     private val devicesRepository: DevicesRepository
 ) {
 
-    suspend fun execute(device: DeviceData) {
-        withContext(Dispatchers.IO) {
+    suspend fun execute(device: DeviceData): DeviceMetadata? {
+        return withContext(Dispatchers.IO) {
             Timber.tag(TAG).i("Fetching device info for ${device.address}")
             val originalMetadata = device.metadata
             val updatedMetadata = connectAndFetchServices(device).firstOrNull()
@@ -33,6 +33,7 @@ class FetchDeviceServiceInfo(
                 devicesRepository.saveDevice(device.copy(metadata = updatedMetadata))
             }
             Timber.tag(TAG).i("Finished fetching device info for ${device.address}, metadata: $updatedMetadata")
+            updatedMetadata
         }
     }
 

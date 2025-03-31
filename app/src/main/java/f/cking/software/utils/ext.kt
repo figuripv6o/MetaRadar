@@ -161,7 +161,7 @@ fun String.checkRegexSafe(pattern: String): Boolean {
     } catch (e: PatternSyntaxException) {
         false
     } catch (e: Throwable) {
-         Timber.e("Unexpected regex failure", e)
+         Timber.e(e, "Unexpected regex failure")
         false
     }
 }
