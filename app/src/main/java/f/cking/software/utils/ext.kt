@@ -14,6 +14,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -115,7 +116,7 @@ object SHA256 {
 }
 
 fun Context.openUrl(url: String) {
-    val webpage: Uri = Uri.parse(url)
+    val webpage: Uri = url.toUri()
     val intent = Intent(Intent.ACTION_VIEW, webpage)
     try {
         startActivity(intent)
@@ -143,9 +144,9 @@ fun <T> List<T>.splitToBatches(batchSize: Int): List<List<T>> {
     do {
         val rangeEnd = fromIndex + (batchSize - 1)
         val toIndex = if (rangeEnd <= lastIndex) rangeEnd else lastIndex
-        result.add(this.subList(fromIndex, toIndex))
+        result.add(this.subList(fromIndex, toIndex + 1))
         fromIndex = toIndex + 1
-    } while (fromIndex < lastIndex)
+    } while (fromIndex <= lastIndex)
 
     return result
 }
@@ -161,7 +162,7 @@ fun String.checkRegexSafe(pattern: String): Boolean {
     } catch (e: PatternSyntaxException) {
         false
     } catch (e: Throwable) {
-         Timber.e("Unexpected regex failure", e)
+         Timber.e(e, "Unexpected regex failure")
         false
     }
 }
@@ -203,4 +204,9 @@ suspend fun <T, R> List<T>.mapParallel(transform: suspend (T) -> R): List<R> {
     return coroutineScope {
         map { async { transform(it) } }.awaitAll()
     }
+}
+
+fun extract16BitUuid(fullUuid: String): String? {
+    val regex = Regex("^0000([0-9a-fA-F]{4})-0000-1000-8000-00805f9b34fb$")
+    return regex.find(fullUuid)?.groupValues?.get(1)
 }

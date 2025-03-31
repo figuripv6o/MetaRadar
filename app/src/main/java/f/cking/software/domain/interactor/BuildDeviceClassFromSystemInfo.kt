@@ -3,6 +3,7 @@ package f.cking.software.domain.interactor
 import android.bluetooth.BluetoothClass
 import f.cking.software.domain.model.DeviceClass
 import f.cking.software.domain.model.DeviceData
+import f.cking.software.extract16BitUuid
 
 object BuildDeviceClassFromSystemInfo {
 
@@ -120,7 +121,7 @@ object BuildDeviceClassFromSystemInfo {
 
     private fun getCategoryByDeviceName(deviceData: DeviceData): DeviceClass {
         return NAME_SUBSTRING_TO_TYPE.entries.firstOrNull { (substring, _) ->
-            deviceData.name.orEmpty().contains(substring, ignoreCase = true)
+            deviceData.resolvedName.orEmpty().contains(substring, ignoreCase = true)
         }?.value ?: DeviceClass.Unknown
     }
 
@@ -134,11 +135,6 @@ object BuildDeviceClassFromSystemInfo {
         return matched.firstOrNull() ?: DeviceClass.Unknown
     }
 
-    private fun extract16BitUuid(fullUuid: String): String? {
-        val regex = Regex("^0000([0-9a-fA-F]{4})-0000-1000-8000-00805f9b34fb$")
-        return regex.find(fullUuid)?.groupValues?.get(1)
-    }
-
     private val SERVICE_UUID_TO_TYPE = mapOf(
         // Tracking Tags
         "fe2c" to DeviceClass.Beacon.AirTag, // apple find my network
@@ -147,6 +143,7 @@ object BuildDeviceClassFromSystemInfo {
         "181a" to DeviceClass.Beacon.Uncategorised,
         "fe9a" to DeviceClass.Beacon.Uncategorised,
         "1843" to DeviceClass.AudioVideo.Uncategorised,// audio input control service
+        "1858" to DeviceClass.AudioVideo.Uncategorised,// gaming audio service
         "180f" to DeviceClass.AudioVideo.Uncategorised,// "Battery Service (common in wireless earbuds and headphones)",
         "1844" to DeviceClass.AudioVideo.Uncategorised,// "Battery Service (common in wireless earbuds and headphones)",
         "180d" to DeviceClass.Health.HeartPulseRate,// "Heart Rate Monitor (wearable, fitness tracker)",
@@ -156,8 +153,13 @@ object BuildDeviceClassFromSystemInfo {
         "1810" to DeviceClass.Health.BloodPressure,//"Blood Pressure Monitor",
         "1809" to DeviceClass.Health.Thermometer,//"Thermometer",
         "181c" to DeviceClass.Health.PulseOximeter,//"Blood Oxygen Sensor (Pulse Oximeter)",
+        "1822" to DeviceClass.Health.PulseOximeter,//"Pulse Oximeter",
         "1812" to DeviceClass.Peripheral.Keyboard,//"Human Interface Device (HID - Keyboard, Mouse, Gamepad)",
         "1824" to DeviceClass.Peripheral.Uncategorised,//"Transport Discovery (Smart Remote, Controller)",
+        "183E" to DeviceClass.Health.Uncategorised,//"Physical Activity Monitor",
+        "1840" to DeviceClass.Health.Uncategorised,//"Generic Health Sensor",
+        "1851" to DeviceClass.AudioVideo.Uncategorised, // "Media Control Service",
+        "1853" to DeviceClass.AudioVideo.Uncategorised, // Common Audio Service,
     )
 
     private val NAME_SUBSTRING_TO_TYPE = mapOf(
@@ -178,5 +180,8 @@ object BuildDeviceClassFromSystemInfo {
         "meta quest" to DeviceClass.Wearable.Glasses,
         " TV" to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
         "TV " to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
+        "MacBook" to DeviceClass.Computer.Laptop,
+        "Mac" to DeviceClass.Computer.Desktop,
+        "iPad" to DeviceClass.Phone.Smartphone,
     )
 }

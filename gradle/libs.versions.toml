@@ -175,6 +175,7 @@ ktx = { module = "androidx.core:core-ktx", version.ref = "ktx" }
 ktx-fragment = { module = "androidx.fragment:fragment-ktx", version.ref = "ktx-fragment" }
 ktx-activity = { module = "androidx.activity:activity-ktx", version.ref = "ktx-activity" }
 ktx-testing = { module = "androidx.test.ext:junit", version.ref = "ktx-testing" }
+ktx-testing-core = { module = "androidx.test:core", version.ref = "ktx-testing" }
 
 # Lifecycle
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }

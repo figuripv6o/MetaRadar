@@ -64,7 +64,7 @@ class BgScanService : Service() {
         }
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + Dispatchers.IO + Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()

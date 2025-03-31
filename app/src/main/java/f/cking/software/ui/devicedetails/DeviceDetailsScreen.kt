@@ -75,6 +75,7 @@ import f.cking.software.R
 import f.cking.software.dateTimeStringFormat
 import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.LocationModel
+import f.cking.software.domain.model.isNullOrEmpty
 import f.cking.software.dpToPx
 import f.cking.software.frameRate
 import f.cking.software.ui.AsyncBatchProcessor
@@ -224,7 +225,7 @@ object DeviceDetailsScreen {
                 viewModel = viewModel,
                 isMoving = isMoving,
             )
-            OnlineStatus(viewModel = viewModel)
+            OnlineStatus(viewModel = viewModel, deviceData.isConnectable)
             Spacer(modifier = Modifier.height(16.dp))
             Tags(deviceData = deviceData, viewModel = viewModel)
             Spacer(modifier = Modifier.height(16.dp))
@@ -237,6 +238,7 @@ object DeviceDetailsScreen {
     @Composable
     private fun OnlineStatus(
         viewModel: DeviceDetailsViewModel,
+        isConnectable: Boolean,
     ) {
         viewModel.onlineStatusData?.let { onlineStatus ->
             Spacer(modifier = Modifier.height(16.dp))
@@ -253,21 +255,23 @@ object DeviceDetailsScreen {
                         Text(text = stringResource(viewModel.connectionStatus.statusRes))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    when (val status = viewModel.connectionStatus) {
-                        is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTED -> {
-                            Button(onClick = { viewModel.establishConnection() }) {
-                                Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
+                    if (isConnectable) {
+                        when (val status = viewModel.connectionStatus) {
+                            is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTED -> {
+                                Button(onClick = { viewModel.establishConnection() }) {
+                                    Text(text = stringResource(R.string.device_details_connect), color = MaterialTheme.colorScheme.onPrimary)
+                                }
                             }
-                        }
 
-                        is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
-                            Button(onClick = { viewModel.disconnect(status.gatt) }) {
-                                Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
+                            is DeviceDetailsViewModel.ConnectionStatus.CONNECTED -> {
+                                Button(onClick = { viewModel.disconnect(status.gatt) }) {
+                                    Text(text = stringResource(R.string.device_details_disconnect), color = MaterialTheme.colorScheme.onPrimary)
+                                }
                             }
-                        }
 
-                        is DeviceDetailsViewModel.ConnectionStatus.CONNECTING, is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
-                            CircularProgressIndicator()
+                            is DeviceDetailsViewModel.ConnectionStatus.CONNECTING, is DeviceDetailsViewModel.ConnectionStatus.DISCONNECTING -> {
+                                CircularProgressIndicator()
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.weight(1f))
@@ -309,7 +313,7 @@ object DeviceDetailsScreen {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_name), fontWeight = FontWeight.Bold)
-                    Text(text = deviceData.name ?: stringResource(R.string.not_applicable))
+                    Text(text = deviceData.resolvedName ?: stringResource(R.string.not_applicable))
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_address), fontWeight = FontWeight.Bold)
@@ -317,7 +321,10 @@ object DeviceDetailsScreen {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(text = stringResource(R.string.device_details_manufacturer), fontWeight = FontWeight.Bold)
-                    Text(text = deviceData.manufacturerInfo?.name ?: stringResource(R.string.not_applicable))
+                    Text(text = deviceData.resolvedManufacturerName ?: stringResource(R.string.not_applicable))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    DeviceMetadataView(deviceData, viewModel)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Services(viewModel.services, viewModel)
@@ -346,6 +353,37 @@ object DeviceDetailsScreen {
                 }
             }
         }
+    }
+
+    @Composable
+    private fun DeviceMetadataView(device: DeviceData, viewModel: DeviceDetailsViewModel) {
+        val metadata = device.metadata
+        ExpandableLine(
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.device_details_metadata),
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    if (viewModel.matadataIsFetching) {
+                        CircularProgressIndicator()
+                    } else if (device.isConnectable) {
+                        TagChip(stringResource(R.string.analyse)) { viewModel.fetchDeviceServiceInfo(device) }
+                    }
+                }
+            },
+            isExpandable = !metadata.isNullOrEmpty(),
+            content = {
+                Column {
+                    metadata?.deviceName?.let { Text(text = it) }
+                    metadata?.manufacturerName?.let { Text(text = it) }
+                    metadata?.modelNumber?.let { Text(text = it) }
+                    metadata?.serialNumber?.let { Text(text = it) }
+                    metadata?.batteryLevel?.let { Text(text = "$it %") }
+                }
+            }
+        )
     }
 
     @Composable
@@ -419,7 +457,7 @@ object DeviceDetailsScreen {
                 Text(value)
                 Text(valueHex)
             } else {
-                TagChip(stringResource(R.string.read)) { viewModel.readService(characteristic.gatt) }
+                TagChip(stringResource(R.string.read)) { viewModel.readCharacteristic(characteristic.gatt) }
             }
         }
     }

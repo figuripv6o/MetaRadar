@@ -72,7 +72,8 @@ class BleScannerHelper(
                 addressType = addressType,
                 deviceClass = result.device.bluetoothClass.deviceClass,
                 isPaired = isPaired,
-                serviceUuids = result.scanRecord?.serviceUuids?.map { it.uuid.toString() }.orEmpty()
+                serviceUuids = result.scanRecord?.serviceUuids?.map { it.uuid.toString() }.orEmpty(),
+                isConnectable = result.isConnectable,
             )
 
             batch.put(device.address, device)
@@ -92,14 +93,14 @@ class BleScannerHelper(
             val device = requireAdapter().getRemoteDevice(address)
 
             val callback = object : BluetoothGattCallback() {
-                override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+                override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
                     super.onServicesDiscovered(gatt, status)
                     if (status == BluetoothGatt.GATT_SUCCESS) {
-                        if (gatt != null) {
-                            Timber.tag(TAG_CONNECT).d("Services discovered. ${gatt.services.size} services for device $address")
-                            services.addAll(gatt.services.orEmpty())
-                        }
-                        trySend(DeviceConnectResult.AvailableServices(services.toList()))
+                        Timber.tag(TAG_CONNECT).d("Services discovered. ${gatt.services.size} services for device $address")
+                        services.addAll(gatt.services.orEmpty())
+                        trySend(DeviceConnectResult.AvailableServices(gatt, services.toList()))
+                    } else {
+                        Timber.tag(TAG_CONNECT).e("Error while discovering services for device $address. Gatt is null")
                     }
                 }
 
@@ -107,7 +108,10 @@ class BleScannerHelper(
                     super.onCharacteristicRead(gatt, characteristic, value, status)
                     if (status == BluetoothGatt.GATT_SUCCESS) {
                         Timber.tag(TAG_CONNECT).d("Characteristic read. ${characteristic.uuid}, value: ${value.decodeToString()}")
-                        trySend(DeviceConnectResult.CharacteristicRead(characteristic, value.toBase64()))
+                        trySend(DeviceConnectResult.CharacteristicRead(gatt, characteristic, value.toBase64()))
+                    } else {
+                        Timber.tag(TAG_CONNECT).e("Error while reading characteristic ${characteristic.uuid}. Error code: $status")
+                        trySend(DeviceConnectResult.FailedReadCharacteristic(gatt, characteristic))
                     }
                 }
 
@@ -115,7 +119,7 @@ class BleScannerHelper(
                     super.onDescriptorRead(gatt, descriptor, status, value)
                     if (status == BluetoothGatt.GATT_SUCCESS) {
                         Timber.tag(TAG_CONNECT).d("Descriptor read. ${descriptor.uuid}, value: ${value.decodeToString()}")
-                        trySend(DeviceConnectResult.DescriptorRead(descriptor, value.toBase64()))
+                        trySend(DeviceConnectResult.DescriptorRead(gatt, descriptor, value.toBase64()))
                     } else {
                         Timber.tag(TAG_CONNECT).e("Error while reading descriptor ${descriptor.uuid}. Error code: $status")
                     }
@@ -176,9 +180,18 @@ class BleScannerHelper(
     }
 
     @SuppressLint("MissingPermission")
+    fun close(gatt: BluetoothGatt) {
+        Timber.tag(TAG_CONNECT).d("Closing connection to device ${gatt.device.address}")
+        gatt.close()
+    }
+
+    @SuppressLint("MissingPermission")
     fun readCharacteristic(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
         Timber.tag(TAG_CONNECT).d("Reading characteristic ${characteristic.uuid}")
-        gatt.readCharacteristic(characteristic)
+        val isSuccess = gatt.readCharacteristic(characteristic)
+        if (!isSuccess) {
+            Timber.tag(TAG_CONNECT).e("Error while reading characteristic ${characteristic.uuid}")
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -189,9 +202,10 @@ class BleScannerHelper(
     }
 
     sealed interface DeviceConnectResult {
-        data class AvailableServices(val services: List<BluetoothGattService>) : DeviceConnectResult
-        data class CharacteristicRead(val characteristic: BluetoothGattCharacteristic, val valueEncoded64: String) : DeviceConnectResult
-        data class DescriptorRead(val descriptor: BluetoothGattDescriptor, val valueEncoded64: String) : DeviceConnectResult
+        data class AvailableServices(val gatt: BluetoothGatt, val services: List<BluetoothGattService>) : DeviceConnectResult
+        data class CharacteristicRead(val gatt: BluetoothGatt, val characteristic: BluetoothGattCharacteristic, val valueEncoded64: String) : DeviceConnectResult
+        data class FailedReadCharacteristic(val gatt: BluetoothGatt, val characteristic: BluetoothGattCharacteristic) : DeviceConnectResult
+        data class DescriptorRead(val gatt: BluetoothGatt, val descriptor: BluetoothGattDescriptor, val valueEncoded64: String) : DeviceConnectResult
         data object Connecting : DeviceConnectResult
         data class Connected(val gatt: BluetoothGatt) : DeviceConnectResult
         data object Disconnecting : DeviceConnectResult

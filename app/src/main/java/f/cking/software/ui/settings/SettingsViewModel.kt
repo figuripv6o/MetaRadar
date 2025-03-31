@@ -44,8 +44,6 @@ class SettingsViewModel(
     private val router: Router,
 ) : ViewModel() {
 
-    private val TAG = "SettingsViewModel"
-
     var garbageRemovingInProgress: Boolean by mutableStateOf(false)
     var locationRemovingInProgress: Boolean by mutableStateOf(false)
     var backupDbInProgress: Boolean by mutableStateOf(false)
@@ -53,6 +51,7 @@ class SettingsViewModel(
     var locationData: LocationProvider.LocationHandle? by mutableStateOf(null)
     var runOnStartup: Boolean by mutableStateOf(settingsRepository.getRunOnStartup())
     var silentModeEnabled: Boolean by mutableStateOf(settingsRepository.getSilentMode())
+    var deepAnalysisEnabled: Boolean by mutableStateOf(settingsRepository.getEnableDeepAnalysis())
 
     init {
         observeLocationData()
@@ -95,6 +94,12 @@ class SettingsViewModel(
                 locationProvider.fetchOnce()
             }
         }
+    }
+
+    fun onEnableDeepAnalysisClick() {
+        val newValue = !settingsRepository.getEnableDeepAnalysis()
+        settingsRepository.setEnableDeepAnalysis(newValue)
+        deepAnalysisEnabled = newValue
     }
 
     fun onBackupDBClick() {
