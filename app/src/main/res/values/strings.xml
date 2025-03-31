@@ -152,6 +152,8 @@
     <string name="name">Name</string>
     <string name="description">Description (optional)</string>
     <string name="is_active">Is active</string>
+    <string name="profile_cooldown">Profile cooldown</string>
+    <string name="profile_cooldown_description">Cooldown period after the profile has been triggered. It might be helpful to avoid constant notifications</string>
     <string name="add_filter">Add filter</string>
     <string name="filter_unknown">Unknown filter</string>
     <string name="min_following_duration">Min following duration</string>
