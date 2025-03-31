@@ -71,85 +71,108 @@ class FetchDeviceServiceInfo(
                 }
             }
 
-            bleScannerHelper.connectToDevice(device.address).collect { event ->
-                when (event) {
-                    is BleScannerHelper.DeviceConnectResult.Connected -> {
-                        Timber.tag(TAG).i("Connected to ${device.address}. Discovering services...")
-                        gatt = event.gatt
-                        bleScannerHelper.discoverServices(event.gatt)
-                    }
-                    is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
-                        if (pendingCharacteristics.isEmpty()) {
-                            val relevantCharacteristics = findRelevantCharacteristics(event.services)
-                            Timber.tag(TAG).i("Services discovered for ${device.address}. Relevant characteristics: ${relevantCharacteristics.map { it.uuid.toString() }}")
-                            if (relevantCharacteristics.isNotEmpty()) {
-                                pendingCharacteristics.putAll(relevantCharacteristics.associateBy { it.uuid.toString() })
-                                requestCharacteristic(event.gatt, relevantCharacteristics.first())
+            bleScannerHelper.connectToDevice(device.address)
+                .collect { event ->
+                    when (event) {
+                        is BleScannerHelper.DeviceConnectResult.Connected -> {
+                            Timber.tag(TAG).i("Connected to ${device.address}. Discovering services...")
+                            gatt = event.gatt
+                            bleScannerHelper.discoverServices(event.gatt)
+                        }
+
+                        is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
+                            if (pendingCharacteristics.isEmpty()) {
+                                val relevantCharacteristics = findRelevantCharacteristics(event.services)
+                                Timber.tag(TAG)
+                                    .i("Services discovered for ${device.address}. Relevant characteristics: ${relevantCharacteristics.map { it.uuid.toString() }}")
+                                if (relevantCharacteristics.isNotEmpty()) {
+                                    pendingCharacteristics.putAll(relevantCharacteristics.associateBy { it.uuid.toString() })
+                                    requestCharacteristic(event.gatt, relevantCharacteristics.first())
+                                } else {
+                                    Timber.tag(TAG).i("No relevant characteristics found for ${device.address}")
+                                    disconnect()
+                                }
                             } else {
-                                Timber.tag(TAG).i("No relevant characteristics found for ${device.address}")
+                                Timber.tag(TAG).i("No services to request for ${device.address}")
                                 disconnect()
                             }
-                        } else {
-                            Timber.tag(TAG).i("No services to request for ${device.address}")
-                            disconnect()
                         }
-                    }
-                    is BleScannerHelper.DeviceConnectResult.CharacteristicRead -> {
-                        val characteristic = event.characteristic
-                        val value = event.valueEncoded64.fromBase64()
-                        val uuid = characteristic.uuid.toString()
-                        Timber.tag(TAG).i("Characteristic read for ${device.address}: Characteristic data $uuid: ${value.decodeToString()}")
 
-                        metadata = when (CharacteristicType.findByUuid(uuid)) {
-                            CharacteristicType.DEVICE_NAME -> {
-                                metadata.copy(deviceName = value.decodeToString())
-                            }
-                            CharacteristicType.MANUFACTURER_NAME -> {
-                                metadata.copy(manufacturerName = value.decodeToString())
-                            }
-                            CharacteristicType.MODEL_NUMBER -> {
-                                metadata.copy(modelNumber = value.decodeToString())
-                            }
-                            CharacteristicType.SERIAL_NUMBER -> {
-                                metadata.copy(serialNumber = value.decodeToString())
-                            }
-                            CharacteristicType.BATTERY_LEVEL -> {
-                                metadata.copy(batteryLevel = value.getOrNull(0)?.toInt())
-                            }
-                            else -> metadata
-                        }
-                        pendingCharacteristics.remove(uuid)
+                        is BleScannerHelper.DeviceConnectResult.CharacteristicRead -> {
+                            val characteristic = event.characteristic
+                            val value = event.valueEncoded64.fromBase64()
+                            val uuid = characteristic.uuid.toString()
+                            Timber.tag(TAG).i("Characteristic read for ${device.address}: Characteristic data $uuid: ${value.decodeToString()}")
 
-                        if (pendingCharacteristics.isEmpty()) {
-                            Timber.tag(TAG).i("All characteristics read for ${device.address}, finishing fetching...")
-                            disconnect()
-                        } else {
-                            Timber.tag(TAG).i("Still pending characteristics for ${device.address}: ${pendingCharacteristics.keys}")
-                            requestCharacteristic(event.gatt, pendingCharacteristics.values.first())
-                        }
-                    }
-                    is BleScannerHelper.DeviceConnectResult.FailedReadCharacteristic -> {
-                        val uuid = event.characteristic.uuid.toString()
-                        Timber.tag(TAG).e("Failed to read characteristic ${event.characteristic.uuid} for ${device.address}")
-                        pendingCharacteristics.remove(uuid)
+                            metadata = when (CharacteristicType.findByUuid(uuid)) {
+                                CharacteristicType.DEVICE_NAME -> {
+                                    metadata.copy(deviceName = value.decodeToString())
+                                }
 
-                        if (pendingCharacteristics.isEmpty()) {
-                            Timber.tag(TAG).i("All characteristics read for ${device.address}, finishing fetching...")
-                            disconnect()
-                        } else {
-                            Timber.tag(TAG).i("Still pending characteristics for ${device.address}: $pendingCharacteristics.keys")
-                            requestCharacteristic(event.gatt, pendingCharacteristics.values.first())
+                                CharacteristicType.MANUFACTURER_NAME -> {
+                                    metadata.copy(manufacturerName = value.decodeToString())
+                                }
+
+                                CharacteristicType.MODEL_NUMBER -> {
+                                    metadata.copy(modelNumber = value.decodeToString())
+                                }
+
+                                CharacteristicType.SERIAL_NUMBER -> {
+                                    metadata.copy(serialNumber = value.decodeToString())
+                                }
+
+                                CharacteristicType.BATTERY_LEVEL -> {
+                                    metadata.copy(batteryLevel = value.getOrNull(0)?.toInt())
+                                }
+
+                                else -> metadata
+                            }
+                            pendingCharacteristics.remove(uuid)
+
+                            if (pendingCharacteristics.isEmpty()) {
+                                Timber.tag(TAG).i("All characteristics read for ${device.address}, finishing fetching...")
+                                disconnect()
+                            } else {
+                                Timber.tag(TAG).i("Still pending characteristics for ${device.address}: ${pendingCharacteristics.keys}")
+                                requestCharacteristic(event.gatt, pendingCharacteristics.values.first())
+                            }
                         }
-                    }
-                    is BleScannerHelper.DeviceConnectResult.Disconnected -> {
-                        Timber.tag(TAG).i("Disconnected from ${device.address}")
-                        submitMetadata()
-                    }
-                    else -> {
-                        // do nothing
+
+                        is BleScannerHelper.DeviceConnectResult.FailedReadCharacteristic -> {
+                            val uuid = event.characteristic.uuid.toString()
+                            Timber.tag(TAG).e("Failed to read characteristic ${event.characteristic.uuid} for ${device.address}")
+                            pendingCharacteristics.remove(uuid)
+
+                            if (pendingCharacteristics.isEmpty()) {
+                                Timber.tag(TAG).i("All characteristics read for ${device.address}, finishing fetching...")
+                                disconnect()
+                            } else {
+                                Timber.tag(TAG).i("Still pending characteristics for ${device.address}: $pendingCharacteristics.keys")
+                                requestCharacteristic(event.gatt, pendingCharacteristics.values.first())
+                            }
+                        }
+
+                        is BleScannerHelper.DeviceConnectResult.Disconnected -> {
+                            Timber.tag(TAG).i("Disconnected from ${device.address}")
+                            submitMetadata()
+                        }
+
+                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError -> {
+                            Timber.tag(TAG).e("Disconnected with error from ${device.address}")
+                            submitMetadata()
+                        }
+
+                        is BleScannerHelper.DeviceConnectResult.MaxGattConnectionsReached -> {
+                            Timber.tag(TAG).e("Max GATT connections reached")
+                            bleScannerHelper.closeDeviceConnection(device.address)
+                            throw MaxConnectionsReached()
+                        }
+
+                        else -> {
+                            // do nothing
+                        }
                     }
                 }
-            }
         }
     }
 
@@ -172,6 +195,8 @@ class FetchDeviceServiceInfo(
     private fun filterRelevantCharacteristics(characteristics: List<BluetoothGattCharacteristic>): List<BluetoothGattCharacteristic> {
         return characteristics.filter { CharacteristicType.findByUuid(it.uuid.toString()) != null }
     }
+
+    class MaxConnectionsReached : RuntimeException()
 
     companion object {
         private const val TAG = "FetchDeviceServiceInfo"

@@ -11,4 +11,5 @@ data class RadarProfileEntity(
     @ColumnInfo(name = "description") val description: String?,
     @ColumnInfo(name = "is_active") val isActive: Boolean = true,
     @ColumnInfo(name = "detect_filter") val detectFilter: String?,
+    @ColumnInfo(name = "cooldown_ms") val cooldown: Long? = null,
 )

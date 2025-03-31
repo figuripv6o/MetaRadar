@@ -151,6 +151,12 @@ class DeviceDetailsViewModel(
                 connectionJob?.cancel()
             }
 
+            is BleScannerHelper.DeviceConnectResult.MaxGattConnectionsReached -> {
+                Timber.e("Max GATT connections reached")
+                connectionStatus = ConnectionStatus.DISCONNECTED
+                connectionJob?.cancel()
+            }
+
             // services update
             is BleScannerHelper.DeviceConnectResult.AvailableServices -> {
                 addServices(result.services.map { mapService(it) }.toSet())

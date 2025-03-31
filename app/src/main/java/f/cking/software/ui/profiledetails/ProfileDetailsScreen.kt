@@ -40,15 +40,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import f.cking.software.R
+import f.cking.software.dateTimeStringFormat
+import f.cking.software.toLocalTime
+import f.cking.software.toMilliseconds
 import f.cking.software.ui.filter.FilterScreen
 import f.cking.software.ui.filter.FilterUiState
 import f.cking.software.ui.filter.SelectFilterTypeScreen
+import f.cking.software.utils.graphic.ClickableField
 import f.cking.software.utils.graphic.GlassSystemNavbar
 import f.cking.software.utils.graphic.RoundedBox
 import f.cking.software.utils.graphic.SystemNavbarSpacer
 import f.cking.software.utils.graphic.ThemedDialog
+import f.cking.software.utils.graphic.rememberTimeDialog
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+import java.time.ZoneId
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 object ProfileDetailsScreen {
@@ -222,6 +229,33 @@ object ProfileDetailsScreen {
                     Switch(checked = viewModel.isActive, onCheckedChange = { viewModel.onIsActiveClick() })
                     Spacer(modifier = Modifier.width(16.dp))
                 }
+            }
+            Spacer(Modifier.height(8.dp))
+            CooldownView(viewModel)
+        }
+    }
+
+    @Composable
+    private fun CooldownView(viewModel: ProfileDetailsViewModel) {
+        val defaultTime = viewModel.cooldownMs ?: TimeUnit.MINUTES.toMillis(0)
+        val timeDialog = rememberTimeDialog(defaultTime.toLocalTime(ZoneId.of("GMT"))) { time ->
+            viewModel.cooldownMs = time.toMilliseconds()
+        }
+        val text = viewModel.cooldownMs?.dateTimeStringFormat("HH:mm", ZoneId.of("GMT"))
+
+        RoundedBox {
+            Text(
+                text = stringResource(R.string.profile_cooldown),
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.profile_cooldown_description),
+                fontWeight = FontWeight.Light,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            ClickableField(text = text, placeholder = stringResource(R.string.chose_time), label = null) {
+                timeDialog.show()
             }
         }
     }

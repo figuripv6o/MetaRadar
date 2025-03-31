@@ -29,6 +29,12 @@ class LocationRepository(
         }
     }
 
+    suspend fun saveLocation(location: LocationModel) {
+        withContext(Dispatchers.IO) {
+            locationDao.saveLocation(location.toData())
+        }
+    }
+
     suspend fun getAllLocationsByAddress(
         deviceAddress: String,
         fromTime: Long = 0,

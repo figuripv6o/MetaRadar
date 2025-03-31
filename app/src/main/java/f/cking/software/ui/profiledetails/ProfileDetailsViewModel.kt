@@ -33,6 +33,7 @@ class ProfileDetailsViewModel(
     var description: String by mutableStateOf("")
     var isActive: Boolean by mutableStateOf(true)
     var filter: FilterUiState? by mutableStateOf(template)
+    var cooldownMs: Long? by mutableStateOf(null)
 
     init {
         if (profileId != null) {
@@ -47,7 +48,8 @@ class ProfileDetailsViewModel(
     }
 
     fun checkUnsavedChanges(): Boolean {
-        return (originalProfile != null && originalProfile != buildProfile()) || (originalProfile == null && buildProfile() != EMPTY_PROFILE)
+        return (originalProfile != null && originalProfile != buildProfile())
+                || (originalProfile == null && buildProfile() != EMPTY_PROFILE)
     }
 
     fun back() {
@@ -94,6 +96,7 @@ class ProfileDetailsViewModel(
         description = profile.description.orEmpty()
         isActive = profile.isActive
         filter = template ?: profile.detectFilter?.let(FilterUiMapper::mapToUi)
+        cooldownMs = profile.cooldownMs
     }
 
     private fun buildProfile(): RadarProfile? {
@@ -104,6 +107,7 @@ class ProfileDetailsViewModel(
                 description = description,
                 isActive = isActive,
                 detectFilter = filter?.let(FilterUiMapper::mapToDomain),
+                cooldownMs = cooldownMs,
             )
         } catch (e: Throwable) {
             null
@@ -117,6 +121,7 @@ class ProfileDetailsViewModel(
             description = "",
             isActive = true,
             detectFilter = null,
+            cooldownMs = null,
         )
     }
 }
