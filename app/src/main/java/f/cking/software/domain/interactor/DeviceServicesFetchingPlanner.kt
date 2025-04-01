@@ -35,7 +35,7 @@ class DeviceServicesFetchingPlanner(
     suspend fun scheduleFetchServiceInfo(devices: List<SavedDeviceHandle>): List<SavedDeviceHandle> = coroutineScope {
 
         val cooldown = this@DeviceServicesFetchingPlanner.cooldown
-        if (cooldown != null && System.currentTimeMillis() - cooldown < MIN_COOLDOWN_DURATION_SEC.seconds.inWholeMilliseconds) {
+        if (cooldown != null && System.currentTimeMillis() - cooldown < MIN_COOLDOWN_DURATION_MINS.seconds.inWholeMilliseconds) {
             Timber.tag(TAG).i("Device services fetching is on cooldown due to a high errors rate, current batch will be skipped")
             return@coroutineScope devices
         }
@@ -194,7 +194,7 @@ class DeviceServicesFetchingPlanner(
         private const val CHECK_INTERVAL_PER_DEVICE_MIN = 10
         private const val DEVICE_FETCH_TIMEOUT_SEC = 5
         private const val TOTAL_FETCH_TIMEOUT_SEC = 30
-        private const val MIN_COOLDOWN_DURATION_SEC = 60
+        private const val MIN_COOLDOWN_DURATION_MINS = 5
         private const val TAG = "DeviceServicesFetchingPlanner"
     }
 }
