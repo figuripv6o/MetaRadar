@@ -7,7 +7,7 @@ object InteractorsModule {
 
     val module = module {
         single { FilterCheckerImpl(get(), get(), get(), get(), get()) }
-        single { DeviceServicesFetchingPlanner(get(), get()) }
+        single { DeviceServicesFetchingPlanner(get(), get(), get()) }
 
         factory { ClearGarbageInteractor(get(), get(), get(), get()) }
         factory { GetAllDevicesInteractor(get()) }
