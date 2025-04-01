@@ -8,12 +8,15 @@ import f.cking.software.mapParallel
 import f.cking.software.splitToBatchesEqual
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -23,6 +26,8 @@ class DeviceServicesFetchingPlanner(
 ) {
 
     private var currentJob: Job? = null
+    private var parallelProcessingBatches = PARALLEL_BATCH_COUNT
+    private var maxPossibleConnections = PARALLEL_BATCH_COUNT
 
     suspend fun scheduleFetchServiceInfo(devices: List<SavedDeviceHandle>) = coroutineScope {
         currentJob?.cancel()
@@ -35,44 +40,69 @@ class DeviceServicesFetchingPlanner(
                     .reversed()
 
                 Timber.tag(TAG).i("Scheduling fetch service info for ${metadataNeeded.size} devices, out of ${devices.size} total")
-
-                fetchAllDevices(metadataNeeded)
-                Timber.tag(TAG).i("All devices processed")
+                try {
+                    fetchAllDevices(metadataNeeded)
+//                    increaseConnections()
+                } catch (e: FetchDeviceServiceInfo.BluetoothConnectionException.UnspecifiedConnectionError) {
+                    Timber.tag(TAG).e(e, "Max connections reached")
+//                    currentJob?.cancel()
+//                    tooMachConnections()
+                }
             }
         }
     }
 
-    private suspend fun fetchAllDevices(metadataNeeded: List<DeviceData>) {
-        try {
-            withTimeout(TOTAL_FETCH_TIMEOUT_SEC.seconds) {
-                Timber.tag(TAG).i("Fetching total devices")
-                metadataNeeded.splitToBatchesEqual(PARALLEL_BATCH_COUNT)
-                    .filter { it.isNotEmpty() }
-                    .mapParallel { batch ->
-                        Timber.tag(TAG).i("Processing batch of ${batch.size} devices")
-                        batch.forEach { device ->
-                            fetchDevice(device)
-                        }
-                    }
-            }
+    private fun tooMachConnections() {
+        maxPossibleConnections = parallelProcessingBatches - 1
+        parallelProcessingBatches = max(1, (parallelProcessingBatches * 0.5).toInt())
+        bleScannerHelper.closeAllConnections()
+    }
 
-        } catch (e: TimeoutCancellationException) {
-            Timber.tag(TAG).e(e, "Timeout fetching total devices")
-            bleScannerHelper.closeAllConnections()
+    private fun increaseConnections() {
+        parallelProcessingBatches = min(max(1, (parallelProcessingBatches * 1.2).toInt()), maxPossibleConnections)
+    }
+
+    private suspend fun fetchAllDevices(metadataNeeded: List<DeviceData>) = coroutineScope {
+        softTimeout(TOTAL_FETCH_TIMEOUT_SEC.seconds, onTimeout = {
+            Timber.tag(TAG).e("Timeout fetching total devices")
+        }) {
+            metadataNeeded.splitToBatchesEqual(parallelProcessingBatches)
+                .filter { it.isNotEmpty() }
+                .mapParallel { batch ->
+                    Timber.tag(TAG).i("Processing batch of ${batch.size} devices ($parallelProcessingBatches parallel)")
+                    batch.forEach { device ->
+                        fetchDevice(device)
+                    }
+                }
+            Timber.tag(TAG).i("All devices processed")
         }
     }
 
     private suspend fun fetchDevice(device: DeviceData) {
-        try {
-            Timber.tag(TAG).i("Fetching device info for ${device.address}")
-            val result = withTimeout(DEVICE_FETCH_TIMEOUT_SEC.seconds) { fetchDeviceServiceInfo.execute(device) }
-            Timber.tag(TAG).i("Fetching complete for ${device.address}. Result: $result")
-        } catch (e: TimeoutCancellationException) {
-            Timber.tag(TAG).e(e, "Timeout fetching device info for ${device.address}")
-            bleScannerHelper.closeDeviceConnection(device.address)
-        } catch (e: FetchDeviceServiceInfo.MaxConnectionsReached) {
-            Timber.tag(TAG).e(e, "Max connections reached")
-            bleScannerHelper.closeAllConnections()
+        softTimeout(DEVICE_FETCH_TIMEOUT_SEC.seconds, onTimeout = {
+            Timber.tag(TAG).e("Timeout fetching device info for ${device.address}")
+        }) {
+            Timber.tag(TAG).i("Fetching device info for ${device.address}, distance: ${device.distance()}")
+            try {
+                val result = fetchDeviceServiceInfo.execute(device)
+                Timber.tag(TAG).i("Fetching complete for ${device.address}. Result: $result")
+            } catch (e: FetchDeviceServiceInfo.BluetoothConnectionException) {
+                Timber.tag(TAG).e(e, "Error when connecting to device ${device.address}")
+            }
+        }
+    }
+
+    private suspend fun softTimeout(timeout: Duration, onTimeout: suspend () -> Unit, block: suspend () -> Unit) = coroutineScope {
+        var timeoutJob: Job? = null
+        val primaryJob = async {
+            block.invoke()
+            timeoutJob?.cancel()
+        }
+
+        timeoutJob = async {
+            delay(timeout)
+            primaryJob.cancel()
+            onTimeout.invoke()
         }
     }
 

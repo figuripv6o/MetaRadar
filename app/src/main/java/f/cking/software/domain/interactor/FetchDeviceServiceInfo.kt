@@ -157,15 +157,34 @@ class FetchDeviceServiceInfo(
                             submitMetadata()
                         }
 
-                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError -> {
-                            Timber.tag(TAG).e("Disconnected with error from ${device.address}")
-                            submitMetadata()
+                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.UnspecifiedConnectionError -> {
+                            Timber.tag(TAG).e("Unspecified connection error from ${device.address}.")
+                            bleScannerHelper.closeDeviceConnection(device.address)
+                            throw BluetoothConnectionException.UnspecifiedConnectionError(event.errorCode)
                         }
 
-                        is BleScannerHelper.DeviceConnectResult.MaxGattConnectionsReached -> {
-                            Timber.tag(TAG).e("Max GATT connections reached")
+                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionTimeout -> {
+                            Timber.tag(TAG).e("Connection timeout error from ${device.address}")
                             bleScannerHelper.closeDeviceConnection(device.address)
-                            throw MaxConnectionsReached()
+                            throw BluetoothConnectionException.ConnectionTimeoutException(event.errorCode)
+                        }
+
+                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionFailedToEstablish -> {
+                            Timber.tag(TAG).e("Connection failed to establish error from ${device.address}")
+                            bleScannerHelper.closeDeviceConnection(device.address)
+                            throw BluetoothConnectionException.ConnectionFailedToEstablish(event.errorCode)
+                        }
+
+                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionFailedBeforeInitializing -> {
+                            Timber.tag(TAG).e("Connection initializing failed error from ${device.address}")
+                            bleScannerHelper.closeDeviceConnection(device.address)
+                            throw BluetoothConnectionException.ConnectionInitializingFailed(event.errorCode)
+                        }
+
+                        is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionTerminated -> {
+                            Timber.tag(TAG).e("Connection terminated error from ${device.address}. Probably max GATT connections reached")
+                            bleScannerHelper.closeDeviceConnection(device.address)
+                            throw BluetoothConnectionException.ConnectionTerminated(event.errorCode)
                         }
 
                         else -> {
@@ -196,7 +215,13 @@ class FetchDeviceServiceInfo(
         return characteristics.filter { CharacteristicType.findByUuid(it.uuid.toString()) != null }
     }
 
-    class MaxConnectionsReached : RuntimeException()
+    sealed class BluetoothConnectionException(message: String) : RuntimeException(message) {
+        class UnspecifiedConnectionError(errorStatus: Int) : BluetoothConnectionException("Unspecified connection error (status: $errorStatus)")
+        class ConnectionTimeoutException(errorStatus: Int) : BluetoothConnectionException("Connection timeout (status: $errorStatus)")
+        class ConnectionFailedToEstablish(errorStatus: Int) : BluetoothConnectionException("Connection failed to establish (status: $errorStatus)")
+        class ConnectionInitializingFailed(errorStatus: Int) : BluetoothConnectionException("Connection initializing failed (code $errorStatus)")
+        class ConnectionTerminated(errorStatus: Int) : BluetoothConnectionException("Connection terminated (status: $errorStatus)")
+    }
 
     companion object {
         private const val TAG = "FetchDeviceServiceInfo"

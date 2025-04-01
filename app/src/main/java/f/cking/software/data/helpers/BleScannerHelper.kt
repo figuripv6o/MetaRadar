@@ -129,12 +129,13 @@ class BleScannerHelper(
                     }
                 }
 
-                override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+                override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                     super.onConnectionStateChange(gatt, status, newState)
                     checkStatus(newState, gatt, status)
                 }
 
-                private fun checkStatus(newState: Int, gatt: BluetoothGatt?, status: Int) {
+                private fun checkStatus(newState: Int, gatt: BluetoothGatt, status: Int) {
+                    connections[address] = gatt
                     when (newState) {
                         BluetoothProfile.STATE_CONNECTING -> {
                             Timber.tag(TAG_CONNECT).d("Connecting to device $address")
@@ -142,7 +143,7 @@ class BleScannerHelper(
                         }
                         BluetoothProfile.STATE_CONNECTED -> {
                             Timber.tag(TAG_CONNECT).d("Connected to device $address")
-                            trySend(DeviceConnectResult.Connected(gatt!!))
+                            trySend(DeviceConnectResult.Connected(gatt))
                         }
                         BluetoothProfile.STATE_DISCONNECTING -> {
                             Timber.tag(TAG_CONNECT).d("Disconnecting from device $address")
@@ -150,24 +151,46 @@ class BleScannerHelper(
                         }
                         BluetoothProfile.STATE_DISCONNECTED -> {
                             Timber.tag(TAG_CONNECT).d("Disconnected from device $address")
-                            if (status == 0x85) {
-                                Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
-                                trySend(DeviceConnectResult.MaxGattConnectionsReached)
-                            } else {
-                                trySend(DeviceConnectResult.Disconnected)
-                            }
+                            handleDisconnect(status)
                         }
                         else -> {
                             Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
-                            trySend(DeviceConnectResult.DisconnectedWithError(status))
-                            false
+                            trySend(DeviceConnectResult.DisconnectedWithError.UnspecifiedConnectionError(status))
+                        }
+                    }
+                }
+
+                private fun handleDisconnect(status: Int) {
+                    when (status) {
+                        BluetoothGatt.GATT_SUCCESS -> {
+                            trySend(DeviceConnectResult.Disconnected)
+                        }
+                        CONNECTION_FAILED_TO_ESTABLISH -> {
+                            Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
+                            trySend(DeviceConnectResult.DisconnectedWithError.ConnectionFailedToEstablish(status))
+                        }
+                        CONNECTION_FAILED_BEFORE_INITIALIZING -> {
+                            Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
+                            trySend(DeviceConnectResult.DisconnectedWithError.ConnectionFailedBeforeInitializing(status))
+                        }
+                        CONNECTION_TERMINATED -> {
+                            Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
+                            trySend(DeviceConnectResult.DisconnectedWithError.ConnectionTerminated(status))
+                        }
+                        BluetoothGatt.GATT_CONNECTION_TIMEOUT -> {
+                            Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
+                            trySend(DeviceConnectResult.DisconnectedWithError.ConnectionTimeout(status))
+                        }
+                        else -> {
+                            Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
+                            trySend(DeviceConnectResult.DisconnectedWithError.UnspecifiedConnectionError(status))
                         }
                     }
                 }
             }
 
             Timber.tag(TAG_CONNECT).d("Connecting to device $address")
-            connections[address] = device.connectGatt(appContext, false, callback)
+            connections[address] = device.connectGatt(appContext, false, callback, BluetoothDevice.TRANSPORT_LE)
 
             awaitClose {
                 Timber.tag(TAG_CONNECT).d("Closing connection to device $address")
@@ -229,8 +252,15 @@ class BleScannerHelper(
         data class Connected(val gatt: BluetoothGatt) : DeviceConnectResult
         data object Disconnecting : DeviceConnectResult
         data object Disconnected : DeviceConnectResult
-        data class DisconnectedWithError(val errorCode: Int) : DeviceConnectResult
-        data object MaxGattConnectionsReached : DeviceConnectResult
+        sealed interface DisconnectedWithError : DeviceConnectResult {
+            val errorCode: Int
+
+            class UnspecifiedConnectionError(override val errorCode: Int) : DisconnectedWithError
+            class ConnectionTimeout(override val errorCode: Int) : DisconnectedWithError
+            class ConnectionTerminated(override val errorCode: Int) : DisconnectedWithError
+            class ConnectionFailedToEstablish(override val errorCode: Int) : DisconnectedWithError
+            class ConnectionFailedBeforeInitializing(override val errorCode: Int) : DisconnectedWithError
+        }
     }
 
     fun isBluetoothEnabled(): Boolean {
@@ -346,5 +376,8 @@ class BleScannerHelper(
     companion object {
         private const val TAG = "BleScannerHelper"
         private const val TAG_CONNECT = "BleScannerHelperConnect"
+        private const val CONNECTION_FAILED_BEFORE_INITIALIZING = 0x85
+        private const val CONNECTION_FAILED_TO_ESTABLISH = 0x3E
+        private const val CONNECTION_TERMINATED = 0x16
     }
 }
