@@ -34,7 +34,7 @@ class DeviceServicesFetchingPlanner(
 
     suspend fun scheduleFetchServiceInfo(devices: List<SavedDeviceHandle>): List<SavedDeviceHandle> = coroutineScope {
 
-        val cooldown = cooldown
+        val cooldown = this@DeviceServicesFetchingPlanner.cooldown
         if (cooldown != null && System.currentTimeMillis() - cooldown < MIN_COOLDOWN_DURATION_SEC.seconds.inWholeMilliseconds) {
             Timber.tag(TAG).i("Device services fetching is on cooldown due to a high errors rate, current batch will be skipped")
             return@coroutineScope devices
