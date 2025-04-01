@@ -39,7 +39,7 @@ class SaveOrMergeBatchInteractor(
 
             devicesRepository.saveScanBatch(mergedDevices)
 
-            val savedBatch = mergedDevices.map { mergedDevice ->
+            var savedBatch = mergedDevices.map { mergedDevice ->
                 SavedDeviceHandle(
                     previouslySeenAtTime = existingDevices[mergedDevice.address]?.lastDetectTimeMs ?: mergedDevice.lastDetectTimeMs,
                     device = mergedDevice,
@@ -50,7 +50,7 @@ class SaveOrMergeBatchInteractor(
             }
 
             if (settingsRepository.getEnableDeepAnalysis()) {
-                deviceServicesFetchingPlanner.scheduleFetchServiceInfo(savedBatch)
+                savedBatch = deviceServicesFetchingPlanner.scheduleFetchServiceInfo(savedBatch)
             }
 
             val location = locationProvider.getFreshLocation()

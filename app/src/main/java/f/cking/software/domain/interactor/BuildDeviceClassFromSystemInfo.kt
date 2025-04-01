@@ -181,7 +181,10 @@ object BuildDeviceClassFromSystemInfo {
         " TV" to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
         "TV " to DeviceClass.AudioVideo.VideoDisplayAndLoudspeaker,
         "MacBook" to DeviceClass.Computer.Laptop,
-        "Mac" to DeviceClass.Computer.Desktop,
+        "iMac" to DeviceClass.Computer.Desktop,
+        "Macmini" to DeviceClass.Computer.Desktop,
+        "Mac1" to DeviceClass.Computer.Desktop,
+        "Mac2" to DeviceClass.Computer.Desktop,
         "iPad" to DeviceClass.Phone.Smartphone,
     )
 }
