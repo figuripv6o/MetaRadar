@@ -29,7 +29,6 @@ class DeviceServicesFetchingPlanner(
 ) {
 
     private var parallelProcessingBatches = PARALLEL_BATCH_COUNT
-    private var maxPossibleConnections = PARALLEL_BATCH_COUNT
     private var cooldownStartedAt: Long? = null
     private var lastJournalReportTime: Long = 0
 
