@@ -56,6 +56,7 @@ class FetchDeviceServiceInfo(
             suspend fun submitMetadata() {
                 Timber.tag(TAG).i("Closing connection ${device.address}")
                 gatt?.let(bleScannerHelper::close)
+                gatt = null // to be sure
                 job?.cancel()
                 emit(metadata)
             }
