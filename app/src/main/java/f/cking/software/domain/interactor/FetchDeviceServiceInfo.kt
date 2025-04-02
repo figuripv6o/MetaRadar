@@ -9,6 +9,7 @@ import f.cking.software.domain.model.DeviceData
 import f.cking.software.domain.model.DeviceMetadata
 import f.cking.software.domain.model.DeviceMetadata.CharacteristicType
 import f.cking.software.domain.model.DeviceMetadata.ServiceTypes
+import f.cking.software.domain.model.isNullOrEmpty
 import f.cking.software.fromBase64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -69,6 +70,12 @@ class FetchDeviceServiceInfo(
                     delay(100)
                     Timber.tag(TAG).i("Disconnecting from ${device.address} takes too long, closing connection")
                     submitMetadata()
+                }
+            }
+
+            fun throwIfMetadataNotUpdated(e: Exception) {
+                if (metadata.isNullOrEmpty() || metadata == device.metadata) {
+                    throw e
                 }
             }
 
@@ -161,38 +168,38 @@ class FetchDeviceServiceInfo(
                         // Error handling
                         is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.UnspecifiedConnectionError -> {
                             Timber.tag(TAG).e("Unspecified connection error from ${device.address}.")
-                            disconnect(event.gatt)
-                            throw BluetoothConnectionException.UnspecifiedConnectionError(event.errorCode)
+                            throwIfMetadataNotUpdated(BluetoothConnectionException.UnspecifiedConnectionError(event.errorCode))
+                            submitMetadata()
                         }
 
                         is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionTimeout -> {
                             Timber.tag(TAG).e("Connection timeout error from ${device.address}")
-                            disconnect(event.gatt)
-                            throw BluetoothConnectionException.ConnectionTimeoutException(event.errorCode)
+                            throwIfMetadataNotUpdated(BluetoothConnectionException.ConnectionTimeoutException(event.errorCode))
+                            submitMetadata()
                         }
 
                         is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionFailedToEstablish -> {
                             Timber.tag(TAG).e("Connection failed to establish error from ${device.address}")
-                            disconnect(event.gatt)
-                            throw BluetoothConnectionException.ConnectionFailedToEstablish(event.errorCode)
+                            throwIfMetadataNotUpdated(BluetoothConnectionException.ConnectionFailedToEstablish(event.errorCode))
+                            submitMetadata()
                         }
 
                         is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionFailedBeforeInitializing -> {
                             Timber.tag(TAG).e("Connection initializing failed error from ${device.address}")
-                            disconnect(event.gatt)
-                            throw BluetoothConnectionException.ConnectionInitializingFailed(event.errorCode)
+                            throwIfMetadataNotUpdated(BluetoothConnectionException.ConnectionInitializingFailed(event.errorCode))
+                            submitMetadata()
                         }
 
                         is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionTerminated -> {
                             Timber.tag(TAG).e("Connection terminated error from ${device.address}. Probably max GATT connections reached")
-                            disconnect(event.gatt)
-                            throw BluetoothConnectionException.ConnectionTerminated(event.errorCode)
+                            throwIfMetadataNotUpdated(BluetoothConnectionException.ConnectionTerminated(event.errorCode))
+                            submitMetadata()
                         }
 
                         is BleScannerHelper.DeviceConnectResult.DisconnectedWithError.ConnectionFailedTooManyClients -> {
                             Timber.tag(TAG).e("Connection failed due to too many clients error from ${device.address}")
-                            disconnect(event.gatt)
-                            throw BluetoothConnectionException.TooManyClients(event.errorCode)
+                            throwIfMetadataNotUpdated(BluetoothConnectionException.TooManyClients(event.errorCode))
+                            submitMetadata()
                         }
 
                         else -> {

@@ -197,20 +197,21 @@ class DeviceServicesFetchingPlanner(
                 || !recentlyChecked
     }
 
-    private fun tooMachConnections() {
-        maxPossibleConnections = parallelProcessingBatches - 1
-        parallelProcessingBatches = max(1, (parallelProcessingBatches * 0.5).toInt())
+    private fun decreaseMaxConnections() {
+        parallelProcessingBatches = max(MIN_PARALLEL_CONNECTIONS, parallelProcessingBatches - 1)
     }
 
     private fun increaseConnections() {
-        parallelProcessingBatches = min(max(1, (parallelProcessingBatches * 1.2).toInt()), maxPossibleConnections)
+        parallelProcessingBatches = min(parallelProcessingBatches + 1, MAX_PARALLEL_CONNECTIONS)
     }
 
     companion object {
-        private const val PARALLEL_BATCH_COUNT = 7
+        private const val PARALLEL_BATCH_COUNT = 7 // usually 7 parallel connections are stable
+        private const val MIN_PARALLEL_CONNECTIONS = 2
+        private const val MAX_PARALLEL_CONNECTIONS = 15
         private const val CHECK_INTERVAL_PER_DEVICE_MIN = 10
         private const val JOURNAL_REPORT_COOLDOWN_MIN = 30
-        private const val DEVICE_FETCH_TIMEOUT_SEC = 5
+        private const val DEVICE_FETCH_TIMEOUT_SEC = 8
         private const val TOTAL_FETCH_TIMEOUT_SEC = 30
         private const val MIN_COOLDOWN_DURATION_MINS = 1
         private const val TAG = "DeviceServicesFetchingPlanner"
