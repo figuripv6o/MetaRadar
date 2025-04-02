@@ -29,12 +29,12 @@ class DeviceServicesFetchingPlanner(
 ) {
 
     private var parallelProcessingBatches = PARALLEL_BATCH_COUNT
-    private var maxPossibleConnections = PARALLEL_BATCH_COUNT
-    private var cooldown: Long? = null
+    private var cooldownStartedAt: Long? = null
+    private var lastJournalReportTime: Long = 0
 
     suspend fun scheduleFetchServiceInfo(devices: List<SavedDeviceHandle>): List<SavedDeviceHandle> = coroutineScope {
 
-        val cooldown = this@DeviceServicesFetchingPlanner.cooldown
+        val cooldown = this@DeviceServicesFetchingPlanner.cooldownStartedAt
         if (cooldown != null && System.currentTimeMillis() - cooldown < MIN_COOLDOWN_DURATION_MINS.minutes.inWholeMilliseconds) {
             Timber.tag(TAG).i("Device services fetching is on cooldown due to a high errors rate, current batch will be skipped")
             return@coroutineScope devices
@@ -137,14 +137,31 @@ class DeviceServicesFetchingPlanner(
         total: Int,
     ) {
         Timber.tag(TAG).i("Deep analysis finished. Candidates: $updateNeeded (updated: $updated, timeouts: $timeouts, errors: $errors), total $total devices")
-        if (updateNeeded > 5 && errors / updateNeeded > 0.7) {
-            val report = JournalEntry.Report.Error(
-                title = "Too many errors during deep analysis. Restart bluetooth or disable deep analysis in settings",
-                stackTrace = "Errors: $errors, timeouts: $timeouts, updated: $updated, in total: $updateNeeded"
-            )
-            saveReportInteractor.execute(report)
-            cooldown = System.currentTimeMillis()
+        val errorsRate: Float = errors / (errors + timeouts + updated).toFloat()
+        if (updateNeeded > 5 && errorsRate > 0.75f) {
+            Timber.tag(TAG).e("Too many errors during deep analysis. Will try to reset ble stack and remove all connections")
+
+            reportJournalEntity(updateNeeded, updated, timeouts, errors)
+            bleScannerHelper.hardCloseAllConnections(TAG)
+            cooldownStartedAt = System.currentTimeMillis()
         }
+    }
+
+    private suspend fun reportJournalEntity(
+        updateNeeded: Int,
+        updated: Int,
+        timeouts: Int,
+        errors: Int,
+    ) {
+        if (System.currentTimeMillis() - lastJournalReportTime < JOURNAL_REPORT_COOLDOWN_MIN.minutes.inWholeMilliseconds) {
+            return
+        }
+        val report = JournalEntry.Report.Error(
+            title = "Too many errors during deep analysis. Restart bluetooth or disable deep analysis in settings",
+            stackTrace = "Errors: $errors, timeouts: $timeouts, updated: $updated, in total: $updateNeeded"
+        )
+        saveReportInteractor.execute(report)
+        lastJournalReportTime = System.currentTimeMillis()
     }
 
     private suspend fun <T> softTimeout(timeout: Duration, onTimeout: suspend () -> T, block: suspend () -> T): T = coroutineScope {
@@ -179,22 +196,23 @@ class DeviceServicesFetchingPlanner(
                 || !recentlyChecked
     }
 
-    private fun tooMachConnections() {
-        maxPossibleConnections = parallelProcessingBatches - 1
-        parallelProcessingBatches = max(1, (parallelProcessingBatches * 0.5).toInt())
-        bleScannerHelper.closeAllConnections()
+    private fun decreaseMaxConnections() {
+        parallelProcessingBatches = max(MIN_PARALLEL_CONNECTIONS, parallelProcessingBatches - 1)
     }
 
     private fun increaseConnections() {
-        parallelProcessingBatches = min(max(1, (parallelProcessingBatches * 1.2).toInt()), maxPossibleConnections)
+        parallelProcessingBatches = min(parallelProcessingBatches + 1, MAX_PARALLEL_CONNECTIONS)
     }
 
     companion object {
-        private const val PARALLEL_BATCH_COUNT = 10
+        private const val PARALLEL_BATCH_COUNT = 7 // usually 7 parallel connections are stable
+        private const val MIN_PARALLEL_CONNECTIONS = 2
+        private const val MAX_PARALLEL_CONNECTIONS = 15
         private const val CHECK_INTERVAL_PER_DEVICE_MIN = 10
-        private const val DEVICE_FETCH_TIMEOUT_SEC = 5
+        private const val JOURNAL_REPORT_COOLDOWN_MIN = 30
+        private const val DEVICE_FETCH_TIMEOUT_SEC = 8
         private const val TOTAL_FETCH_TIMEOUT_SEC = 30
-        private const val MIN_COOLDOWN_DURATION_MINS = 5
+        private const val MIN_COOLDOWN_DURATION_MINS = 1
         private const val TAG = "DeviceServicesFetchingPlanner"
     }
 }
