@@ -26,6 +26,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.UUID
@@ -147,11 +148,11 @@ class BleScannerHelper(
                         BluetoothProfile.STATE_DISCONNECTING -> {
                             Timber.tag(TAG_CONNECT).d("Disconnecting from device $address")
                             trySend(DeviceConnectResult.Disconnecting)
-                            gatt.close()
                         }
                         BluetoothProfile.STATE_DISCONNECTED -> {
                             Timber.tag(TAG_CONNECT).d("Disconnected from device $address")
                             handleDisconnect(status, gatt)
+                            close(gatt)
                         }
                         else -> {
                             Timber.tag(TAG_CONNECT).e("Error while connecting to device $address. Error code: $status")
@@ -198,10 +199,10 @@ class BleScannerHelper(
 
             awaitClose {
                 Timber.tag(TAG_CONNECT).d("Closing connection to device $address")
-                if (requireBluetoothManager().getConnectionState(device, BluetoothProfile.GATT) != BluetoothProfile.STATE_DISCONNECTED) {
+                if (isDeviceConnected(device)) {
                     gatt.disconnect()
                 } else {
-                    gatt.close()
+                    close(gatt)
                 }
             }
         }
@@ -220,19 +221,72 @@ class BleScannerHelper(
     }
 
     @SuppressLint("MissingPermission")
-    fun close(gatt: BluetoothGatt) {
-        Timber.tag(TAG_CONNECT).d("Closing connection to device ${gatt.device.address}")
+    fun close(gatt: BluetoothGatt, tag: String = TAG_CONNECT) {
+        Timber.tag(tag).i("Closing connection to device ${gatt.device.address}")
+        if (isDeviceConnected(gatt.device)) {
+            Timber.tag(tag).e("Trying to close connection for device ${gatt.device.address} while it is still connected.")
+        }
         gatt.close()
+        connections.remove(gatt.device.address)
     }
 
     fun closeDeviceConnection(address: String) {
         connections[address]?.let(::close)
-        connections.remove(address)
     }
 
-    fun closeAllConnections() {
-        connections.values.forEach(::close)
+    @SuppressLint("MissingPermission")
+    fun isDeviceConnected(device: BluetoothDevice): Boolean {
+        return requireBluetoothManager().getConnectionState(device, BluetoothProfile.GATT) == BluetoothProfile.STATE_CONNECTED
+    }
+
+    @SuppressLint("MissingPermission")
+    fun isDeviceDisconnected(device: BluetoothDevice): Boolean {
+        return requireBluetoothManager().getConnectionState(device, BluetoothProfile.GATT) == BluetoothProfile.STATE_DISCONNECTED
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun hardDisconnectDevice(device: BluetoothDevice, tag: String = TAG_CONNECT) {
+        return callbackFlow<Unit> {
+            Timber.tag(tag).i("Trying to close connection to device ${device.address}")
+            val gatt = device.connectGatt(appContext, false, object : BluetoothGattCallback() {
+                override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+                    super.onConnectionStateChange(gatt, status, newState)
+                    Timber.tag(tag).i("Connection state change for device ${gatt.device.address}. Status: $status, newState: $newState")
+                    when (newState) {
+                        BluetoothProfile.STATE_CONNECTED -> {
+                            Timber.tag(tag).i("Try disconnect from ${gatt.device.address}")
+                            gatt.disconnect()
+                        }
+                        BluetoothProfile.STATE_DISCONNECTED -> {
+                            Timber.tag(tag).i("Disconnected. Closing connection ${gatt.device.address}")
+                            gatt.close()
+                            trySend(Unit)
+                            this@callbackFlow.close()
+                        }
+                    }
+                }
+            })
+
+            awaitClose {
+                if (isDeviceConnected(device)) {
+                    Timber.tag(tag).e("Device ${gatt.device.address} is still connected")
+                }
+            }
+        }.first()
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun hardCloseAllConnections(tag: String = TAG_CONNECT) {
+        connections.values.forEach { close(it, tag) }
         connections.clear()
+        val otherConnections = requireBluetoothManager().getConnectedDevices(BluetoothProfile.GATT)
+        Timber.tag(tag).i("Found ${otherConnections.size} other connections")
+        otherConnections.forEach { device ->
+            hardDisconnectDevice(device, tag)
+        }
+        System.gc()
+        val stillConnected = requireBluetoothManager().getConnectedDevices(BluetoothProfile.GATT)
+        Timber.tag(tag).i("Hard close all connections done. ${stillConnected.size} connections left")
     }
 
     @SuppressLint("MissingPermission")
