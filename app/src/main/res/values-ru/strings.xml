@@ -95,7 +95,7 @@
     <string name="filter_by_name">По имени</string>
     <string name="filter_by_name_description">Срабатывает если имя устройства соответствует фильтру. Поддерживаются регулярные выражения.</string>
     <string name="filter_by_address">По адресу</string>
-    <string name="filter_by_address_disclaimer">Адрес устройства или регулярное выражение</string>
+    <string name="filter_by_address_disclaimer">Адрес устройства</string>
     <string name="filter_by_address_description">Срабатывает если адрес устройство совпадает с фильтром. Поддерживаются регулярные выражения</string>
     <string name="filter_by_first_detection_period">По периоду первого обнаружения</string>
     <string name="filter_by_first_detection_period_description">Срабатывает если устройство было в первый раз обнаружено в определенный промежуток времени</string>
