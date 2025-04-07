@@ -34,7 +34,7 @@ class FilterCheckerImpl(
         regexMatch || noCaseSubstringMatch
     }
     private val address = filterChecker<RadarProfile.Filter.Address>(useCache = true) { device, filter ->
-        device.address.checkRegexSafe(filter.address)
+        device.address == filter.address
     }
     private val manufacturer = filterChecker<RadarProfile.Filter.Manufacturer>(useCache = true) { device, filter ->
         device.manufacturerInfo?.id?.let { it == filter.manufacturerId } ?: false
