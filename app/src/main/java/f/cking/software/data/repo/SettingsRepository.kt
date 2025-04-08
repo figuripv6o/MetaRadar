@@ -112,6 +112,14 @@ class SettingsRepository(
         return sharedPreferences.getBoolean(KEY_ENABLE_DEEP_ANALYSIS, false)
     }
 
+    fun setDisclaimerWasAccepted(value: Boolean) {
+        sharedPreferences.edit { putBoolean(KEY_DISCLAIMER_WAS_ACCEPTED, value) }
+    }
+
+    fun getDisclaimerWasAccepted(): Boolean {
+        return sharedPreferences.getBoolean(KEY_DISCLAIMER_WAS_ACCEPTED, false)
+    }
+
     companion object {
         private const val KEY_GARBAGING_TIME = "key_garbaging_time"
         private const val KEY_USE_GPS_ONLY = "key_use_gps_location_only"
@@ -124,6 +132,7 @@ class SettingsRepository(
         private const val KEY_CURRENT_BATCH_SORTING_STRATEGY_ID = "key_current_batch_sorting_strategy_id"
         private const val KEY_HIDE_BACKGROUND_LOCATION_WARNING = "key_hide_background_location_warning"
         private const val KEY_ENABLE_DEEP_ANALYSIS = "key_enable_deep_analysis"
+        private const val KEY_DISCLAIMER_WAS_ACCEPTED = "key_disclaimer_was_accepted"
 
         const val NO_APP_LAUNCH_TIME = -1L
         const val NO_ENJOY_THE_APP_STARTING_POINT = -1L

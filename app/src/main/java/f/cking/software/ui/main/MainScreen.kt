@@ -6,7 +6,17 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,6 +62,7 @@ import f.cking.software.utils.graphic.DropEffectState
 import f.cking.software.utils.graphic.GlassBottomNavBar
 import f.cking.software.utils.graphic.SystemNavbarSpacer
 import f.cking.software.utils.graphic.ThemedDialog
+import f.cking.software.utils.graphic.infoDialog
 import f.cking.software.utils.graphic.rememberDropEffectState
 import f.cking.software.utils.graphic.withDropEffect
 import org.koin.androidx.compose.koinViewModel
@@ -195,10 +206,35 @@ object MainScreen {
         }
 
         val context = LocalContext.current
+
+        var checkAndStartService: (() -> Boolean)? = null
+
+        val disclaimerDialog = infoDialog(
+            title = stringResource(R.string.disclaimer),
+            content = stringResource(R.string.unlowful_usage_disclaimer),
+            buttons = { state ->
+                {
+                    negativeButton(
+                        stringResource(R.string.decline),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface)
+                    ) { state.hide() }
+
+                    positiveButton(
+                        stringResource(R.string.accept),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface)
+                    ) {
+                        viewModel.disclaimerWasAccepted()
+                        state.hide()
+                        checkAndStartService?.invoke()
+                    }
+                }
+            }
+        )
+
         val permissionsIntro = permissionsIntroDialog(
             onPassed = {
                 viewModel.userHasPassedPermissionsIntro()
-                viewModel.runBackgroundScanning()
+                checkAndStartService?.invoke()
             },
             onDeclined = {
                 Toast.makeText(context, "The scanner cannot work without these permissions", Toast.LENGTH_SHORT).show()
@@ -206,6 +242,23 @@ object MainScreen {
         )
         val haptic = LocalHapticFeedback.current
         var observeEvent = remember { true }
+
+        checkAndStartService = {
+            when {
+                viewModel.needToShowDisclaimer() -> {
+                    disclaimerDialog.show()
+                    false
+                }
+                viewModel.needToShowPermissionsIntro() -> {
+                    permissionsIntro.show()
+                    false
+                }
+                else -> {
+                    viewModel.runBackgroundScanning()
+                    true
+                }
+            }
+        }
 
         ExtendedFloatingActionButton(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -225,13 +278,12 @@ object MainScreen {
                         }
 
                         observeEvent && event.action == MotionEvent.ACTION_UP -> {
-                            if (viewModel.needToShowPermissionsIntro()) {
-                                permissionsIntro.show()
-                                dropEffectState.drop(type = DropEffectState.DropEvent.Type.RELEASE_SOFT, touchX, touchY)
-                            } else {
-                                viewModel.runBackgroundScanning()
+                            val started = checkAndStartService.invoke()
+                            if (started) {
                                 dropEffectState.drop(type = DropEffectState.DropEvent.Type.RELEASE_HARD, touchX, touchY)
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            } else {
+                                dropEffectState.drop(type = DropEffectState.DropEvent.Type.RELEASE_SOFT, touchX, touchY)
                             }
                             true
                         }

@@ -191,11 +191,12 @@ fun rememberProgressDialog(
 fun infoDialog(
     title: String,
     content: String?,
+    buttons: ((state: MaterialDialogState) -> (@Composable MaterialDialogButtons.() -> Unit))? = null,
 ): MaterialDialogState {
     val dialogState = rememberMaterialDialogState()
     ThemedDialog(
         dialogState = dialogState,
-        buttons = {
+        buttons = buttons?.invoke(dialogState) ?: {
             positiveButton(
                 stringResource(R.string.ok),
                 textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface)
