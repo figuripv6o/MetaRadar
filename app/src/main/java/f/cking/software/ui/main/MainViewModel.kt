@@ -113,6 +113,14 @@ class MainViewModel(
         settingsRepository.setPermissionsIntroWasShown(true)
     }
 
+    fun needToShowDisclaimer(): Boolean {
+        return !settingsRepository.getDisclaimerWasAccepted()
+    }
+
+    fun disclaimerWasAccepted() {
+        settingsRepository.setDisclaimerWasAccepted(true)
+    }
+
     private fun observeScanInProgress() {
         viewModelScope.launch {
             BgScanService.state

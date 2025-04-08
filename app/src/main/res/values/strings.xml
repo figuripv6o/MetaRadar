@@ -16,6 +16,7 @@
     <string name="ok">OK</string>
     <string name="turn_on">Turn on</string>
     <string name="report">Report</string>
+    <string name="accept">Accept</string>
     <string name="shaders_test" translatable="false">Shaders test</string>
     <string name="preparing_database">Optimizing database, it might take a minute…</string>
 
@@ -356,4 +357,6 @@
 
     <string name="bluetooth_status_paired">paired</string>
     <string name="bluetooth_status_paired_description">Device is paired</string>
+    
+    <string name="unlowful_usage_disclaimer">This project is developed solely for educational, security research, and personal investigative purposes. The author does not endorse or encourage any use of this software for unlawful or unethical activities. You are solely responsible for ensuring your use of this tool complies with all applicable laws and regulations.</string>
 </resources>
