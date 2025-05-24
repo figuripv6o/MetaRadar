@@ -1,25 +1,21 @@
-# BUZZO BLE Sync – ATL Rihanna Storm Mode Integration
+# Make sure you're in the MetaRadar folder
+cd ~/MetaRadar
 
-This branch integrates over 6000+ BLE service/device profiles into the MetaRadar scanner with **ATL-style buzz reaction**, voice drops, and full synchronization for party/security mode.
+# Create new branch if not already done
+git checkout -b buzzo-drop
 
----
+# Download missing files if needed (replace if they exist)
+curl -o buzzo_storm.py "https://chats.openai.com/sandbox/api/files/file-FrRrr4mRBY3sAb8tb5oMbC/content"
+curl -o load_profiles.py "https://chats.openai.com/sandbox/api/files/file-X57UD3q6RTC1gsZyMMaavB/content"
+curl -o README_BUZZO_SYNC.md "https://chats.openai.com/sandbox/api/files/file-MWQo9aRRYecasgzrdFf3oz/content"
+curl -o MetaRadar_BLE_Payload.zip "https://chats.openai.com/sandbox/api/files/file-TCMswWcu3wBemV3Ez9vn6U/content"
 
-## Features
+# Unzip device profiles
+mkdir -p data/ble_profiles
+unzip -o MetaRadar_BLE_Payload.zip -d data/ble_profiles/
 
-- **Massive BLE Library**: 6000+ scanned + tagged device profiles including:
-  - iPhones, iPads, Apple Watches
-  - AirPods, Beats, Samsung Buds
-  - Custom BLE wearables and IoT sensors
-- **BuzzStorm Mode** (20 Hours):
-  - Auto-buzz on voice, clap, snap, pop
-  - ATL voice drops every 90 seconds:  
-    _“Call me rude boy, can you get it up?”_
-  - Rihanna mix can be loaded via audio folder
-- **Live Sync with BUZZO Devices**:
-  - Lil Buzz, Baby Buzz, and BLE-connected buzz hardware
-  - Uses MAC and UUID matching from profile list
-- **Offline Friendly**: All scanning, audio, and buzz logic runs locally — no cloud needed.
+# Stage BUZZO files for commit
+git add buzzo_storm.py load_profiles.py README_BUZZO_SYNC.md
+git add data/ble_profiles/*
 
----
-
-## File Structure
+git commit -m "BUZZO Full Sync: BLE profiles, 
