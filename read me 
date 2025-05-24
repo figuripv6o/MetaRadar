@@ -1,0 +1,25 @@
+# BUZZO BLE Sync – ATL Rihanna Storm Mode Integration
+
+This branch integrates over 6000+ BLE service/device profiles into the MetaRadar scanner with **ATL-style buzz reaction**, voice drops, and full synchronization for party/security mode.
+
+---
+
+## Features
+
+- **Massive BLE Library**: 6000+ scanned + tagged device profiles including:
+  - iPhones, iPads, Apple Watches
+  - AirPods, Beats, Samsung Buds
+  - Custom BLE wearables and IoT sensors
+- **BuzzStorm Mode** (20 Hours):
+  - Auto-buzz on voice, clap, snap, pop
+  - ATL voice drops every 90 seconds:  
+    _“Call me rude boy, can you get it up?”_
+  - Rihanna mix can be loaded via audio folder
+- **Live Sync with BUZZO Devices**:
+  - Lil Buzz, Baby Buzz, and BLE-connected buzz hardware
+  - Uses MAC and UUID matching from profile list
+- **Offline Friendly**: All scanning, audio, and buzz logic runs locally — no cloud needed.
+
+---
+
+## File Structure
