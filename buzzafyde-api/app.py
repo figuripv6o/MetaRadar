@@ -1,0 +1,1 @@
+from flask import Flask, os\napp = Flask(__name__)\n\n@app.route('/')\ndef home(): return '🔥 ACTIVE'\n\n@app.route('/buzz')\ndef buzz(): return {'status': 'Buzzin 🐝'}\n\nif __name__ == '__main__': app.run(host='0.0.0.0', port=8080)
