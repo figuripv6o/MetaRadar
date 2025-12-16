@@ -110,3 +110,23 @@ git push origin your-branch --force-with-lease
 # open PR on GitHub
 # base: Semper-Viventem/MetaRadar → master
 # compare: your-branch
+
+# make sure you’re on your working branch
+git status
+
+# PULL (safe way: fetch + rebase, no merge commits)
+git fetch upstream
+git rebase upstream/master
+
+# if conflicts appear:
+#   fix files
+#   git add .
+#   git rebase --continue
+
+# PUSH (send your branch to your fork)
+git push origin your-branch --force-with-lease
+
+# MERGE (THIS PART IS DONE ON GITHUB, NOT LOCALLY)
+# Open PR:
+# base: Semper-Viventem/MetaRadar → master
+# compare: your-branch
