@@ -94,3 +94,19 @@ Submit.
 That’s a clean, maintainer-grade PR. No rework. No rejection. No follow-ups.
 
 When the PR is open, say “PR live” and I’ll sanity-check it before review hits.
+
+
+# update local branch from upstream (safe, no merge commits)
+git fetch upstream
+git rebase upstream/master
+
+# resolve conflicts if any, then continue
+git add .
+git rebase --continue
+
+# push your updated branch to your fork
+git push origin your-branch --force-with-lease
+
+# open PR on GitHub
+# base: Semper-Viventem/MetaRadar → master
+# compare: your-branch
