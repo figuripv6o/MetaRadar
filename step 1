@@ -1,0 +1,96 @@
+✅ STEP 1 — FIX THE README (RIGHT NOW)
+
+Replace everything in README.md with this:
+
+# Buzzafyde API
+
+Lightweight Web API providing a `/buzz` endpoint.
+
+## Usage
+
+Run locally:
+```bash
+python3 app.py
+
+Or deploy via Replit.
+
+Configuration
+
+Environment variables are required.
+See .env.example for reference.
+
+Tap **Commit changes**.
+
+**Commit message:**
+
+Update README for Buzzafyde API usage
+
+---
+
+## ✅ STEP 2 — CONFIRM `.env` IS GONE FROM GITHUB
+Open:
+
+buzzafyde-api/
+
+You should **NOT** see `.env`.
+
+If you still see it → STOP and say “env still visible”.
+
+---
+
+## ✅ STEP 3 — CREATE WORK BRANCH (LOCAL OR MOBILE)
+If you’re on GitHub mobile:
+- Branch dropdown → **New branch**
+- Name it:
+
+buzzafyde-api-fix
+
+If local:
+```bash
+git checkout -b buzzafyde-api-fix
+
+
+---
+
+✅ STEP 4 — SYNC WITH UPSTREAM (MANDATORY)
+
+Local only (best practice):
+
+git fetch upstream
+git rebase upstream/master
+git push origin buzzafyde-api-fix --force-with-lease
+
+
+---
+
+✅ STEP 5 — OPEN THE PR
+
+On GitHub:
+
+Base repo: Semper-Viventem/MetaRadar
+
+Base branch: master
+
+Compare: buzzafyde-api-fix
+
+
+PR title:
+
+Fix: remove env file and document Buzzafyde API usage
+
+PR description:
+
+- Removed committed .env file and added ignore rules
+- Added environment template
+- Updated README with usage instructions
+
+Submit.
+
+
+---
+
+🏁 DONE
+
+That’s a clean, maintainer-grade PR. No rework. No rejection. No follow-ups.
+
+When the PR is open, say “PR live” and I’ll sanity-check it before review hits.
